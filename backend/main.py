@@ -354,3 +354,116 @@ async def delete_defect(defect_id: str):
 async def list_open_defects(story_id: Optional[str] = None):
     """List all open/reopened defects, optional story filter."""
     return defects_repo.list_open(story_id=story_id)
+
+
+# ── Artifact Generation ───────────────────────────────────────────────────────
+import engines.artifact_generator as artifact_gen_mod
+
+class ArtifactRequest(BaseModel):
+    analysis_id: str                          # ID of existing analysis
+    profiles:    Optional[list[str]] = None   # None = all profiles
+
+
+@app.post("/api/v1/artifacts/generate")
+async def generate_artifacts(body: ArtifactRequest):
+    """
+    Generate artifacts from an existing analysis.
+    Fetches full pipeline result from DB and runs artifact generator.
+    """
+    # Load analysis from DB
+    full = analysis_repo.get(body.analysis_id)
+    if not full:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    result_data = full.get("result")
+    if not result_data:
+        raise HTTPException(status_code=422, detail="Analysis has no result data")
+
+    # Reconstruct pipeline objects from stored JSON
+    from models.schemas import (
+        NormalizedRequirement, AmbiguityResult, RiskResult,
+        RulesResult, GapResult, CoverageResult,
+        TraceabilityResult, SynthesisResult,
+    )
+
+    def safe_parse(model, data):
+        try:
+            return model(**data) if data else None
+        except Exception:
+            return None
+
+    normalized   = safe_parse(NormalizedRequirement, result_data.get("normalized"))
+    ambiguity    = safe_parse(AmbiguityResult,        result_data.get("ambiguity"))
+    risk         = safe_parse(RiskResult,             result_data.get("risk"))
+    rules_result = safe_parse(RulesResult,            result_data.get("rules"))
+    gap          = safe_parse(GapResult,              result_data.get("gap"))
+    cov          = safe_parse(CoverageResult,         result_data.get("coverage"))
+    tra          = safe_parse(TraceabilityResult,     result_data.get("traceability"))
+    synth        = safe_parse(SynthesisResult,        result_data.get("synthesis"))
+    knowledge    = result_data.get("knowledge")
+    story_id     = result_data.get("normalized", {}).get("original", "")
+
+    if not normalized:
+        raise HTTPException(status_code=422, detail="Normalized data missing from analysis")
+
+    provider = get_provider()
+    artifacts = await artifact_gen_mod.run(
+        normalized=normalized,
+        ambiguity=ambiguity,
+        risk=risk,
+        rules=rules_result,
+        gap=gap,
+        coverage=cov,
+        traceability=tra,
+        synthesis=synth,
+        knowledge=knowledge,
+        provider=provider,
+        max_tokens=settings.ENGINE_MAX_TOKENS,
+        language=settings.ENGINE_LANGUAGE,
+        story_id=full.get("story_id"),
+        profiles=body.profiles,
+    )
+
+    # ── Save artifacts back to the analysis record ────────────────────────────
+    try:
+        import json
+        from models.database import get_connection, analyses
+        from sqlalchemy import update as sa_update
+
+        # Merge artifacts into existing result_json
+        result_data["artifacts"] = artifacts.model_dump(mode='json')
+        new_json = json.dumps(result_data, default=str)
+
+        with get_connection() as conn:
+            conn.execute(
+                sa_update(analyses)
+                .where(analyses.c.id == body.analysis_id)
+                .values(result_json=new_json)
+            )
+            conn.commit()
+    except Exception as e:
+        # Never fail the response because of a save error
+        pass
+
+    return artifacts
+
+
+@app.get("/api/v1/artifacts/{analysis_id}")
+async def get_artifacts(analysis_id: str, profile: Optional[str] = None):
+    """
+    Get previously generated artifacts for an analysis.
+    Optional profile filter: qa | dev | po | audit
+    """
+    full = analysis_repo.get(analysis_id)
+    if not full:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    arts = full.get("result", {}).get("artifacts")
+    if not arts:
+        raise HTTPException(status_code=404, detail="No artifacts generated for this analysis")
+
+    items = arts.get("artifacts", [])
+    if profile:
+        items = [a for a in items if a.get("profile") == profile]
+
+    return {"analysis_id": analysis_id, "total": len(items), "artifacts": items}

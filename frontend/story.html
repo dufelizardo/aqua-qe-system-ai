@@ -469,6 +469,14 @@ body{
         🔗 RTM <span class="tab-count" id="cnt-traceability">0</span>
       </button>
       <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-inference" id="btn-inference" onclick="switchTab('inference',this)">
+        🔍 RF/RNF <span class="tab-count" id="cnt-inference">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-artifacts" id="btn-artifacts" onclick="switchTab('artifacts',this)">
+        ⚡ Artefatos <span class="tab-count" id="cnt-artifacts">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
         aria-controls="tab-knowledge" id="btn-knowledge" onclick="switchTab('knowledge',this)">
         📚 Conhecimento <span class="tab-count" id="cnt-knowledge">0</span>
       </button>
@@ -508,6 +516,36 @@ body{
       </div>
       <div id="traceability-content" aria-live="polite">
         <div class="empty"><div class="empty-icon">🔗</div><div class="empty-title">Nenhuma RTM disponível</div><div class="empty-sub">Execute uma análise no Hub para gerar a RTM desta história.</div></div>
+      </div>
+    </section>
+
+    <!-- TAB: INFERENCE -->
+    <section id="tab-inference" role="tabpanel" aria-labelledby="btn-inference" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Requisitos Funcionais e Não-Funcionais Inferidos</h2>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">extraídos da última análise</span>
+      </div>
+      <div id="inference-content" aria-live="polite">
+        <div class="empty">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">Nenhum dado de inferência</div>
+          <div class="empty-sub">Execute uma análise no Hub para inferir os RFs e RNFs implícitos desta história.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ARTIFACTS -->
+    <section id="tab-artifacts" role="tabpanel" aria-labelledby="btn-artifacts" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Geração de Artefatos</h2>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">Por perfil · com contexto real do pipeline</span>
+      </div>
+      <div id="artifacts-content" aria-live="polite">
+        <div class="empty">
+          <div class="empty-icon">⚡</div>
+          <div class="empty-title">Nenhum artefato gerado</div>
+          <div class="empty-sub">Selecione uma versão acima e clique em "Gerar Artefatos" para criar artefatos baseados no pipeline completo.</div>
+        </div>
       </div>
     </section>
 
@@ -696,7 +734,7 @@ async function loadAll() {
     family    = famRes.status   === 'fulfilled' && famRes.value.ok   ? await famRes.value.json()   : {};
     knowledge = knowRes.status  === 'fulfilled' && knowRes.value.ok  ? await knowRes.value.json()  : {};
 
-    // Load traceability from latest analysis result
+    // Load traceability, inference and artifacts from latest analysis result
     if (versions.length > 0) {
       try {
         const latest = versions[0];
@@ -705,9 +743,17 @@ async function loadAll() {
           if (traRes.ok) {
             const fullAnalysis = await traRes.json();
             window._latestTraceability = fullAnalysis?.result?.traceability || null;
+            window._latestInference    = fullAnalysis?.result?.inference    || null;
+            window._latestArtifacts    = fullAnalysis?.result?.artifacts    || null;
+            window._latestAnalysisId   = latest.id;
           }
         }
-      } catch(e) { window._latestTraceability = null; }
+      } catch(e) {
+        window._latestTraceability = null;
+        window._latestInference    = null;
+        window._latestArtifacts    = null;
+        window._latestAnalysisId   = null;
+      }
     }
 
     renderAll();
@@ -742,6 +788,8 @@ function renderAll() {
   renderLinks();
   renderKnowledge();
   renderTraceability();
+  renderInferenceStory();
+  renderSavedArtifacts();
   updateCounts();
 }
 
@@ -832,8 +880,13 @@ function renderVersions() {
       <div class="ver-actions">
         <button class="btn btn-ghost btn-sm" onclick="loadVersionInHub(${v.id ? `'${v.id}'` : 'null'})"
           aria-label="Abrir versão ${v.version} no Hub">
-          ↗ Ver no Hub
+          ↗ Hub
         </button>
+        ${v.id ? `<button class="btn btn-primary btn-sm"
+          onclick="generateArtifactsStory('${v.id}', ${v.version})"
+          aria-label="Gerar artefatos da versão ${v.version}">
+          ⚡ Artefatos
+        </button>` : ''}
       </div>
     </article>`;
   }).join('');
@@ -924,6 +977,69 @@ function renderLinks() {
 
   if (!family.parent_story && !children.length) {
     html = emptyState('🔗', 'Nenhum vínculo', 'Esta história não tem melhorias vinculadas nem está vinculada a uma história pai.');
+  }
+
+  el.innerHTML = html;
+}
+
+function renderInferenceStory() {
+  const inf = window._latestInference;
+  const el  = document.getElementById('inference-content');
+  if (!inf) return;
+
+  const prioColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+  const catColor  = {
+    funcional:'#4f8fff',integracao:'#26c6da',dados:'#9b6fff',
+    performance:'#26c6da',seguranca:'#ff5252',disponibilidade:'#4caf8a',
+    compliance:'#ffab40',usabilidade:'#4f8fff'
+  };
+
+  function reqTable(items, accent) {
+    if (!items?.length) return '<div style="padding:12px;font-size:10px;font-family:var(--mono);color:var(--text-muted)">Nenhum item</div>';
+    return items.map(r => `
+      <article class="knowledge-item" aria-label="${esc(r.id)}: ${esc(r.title)}">
+        <div class="ki-hd">
+          <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:${accent}">${esc(r.id)}</span>
+          <span class="badge" style="background:rgba(0,0,0,.2);color:${catColor[r.category]||'var(--text-muted)'}">${esc(r.category)}</span>
+          <span class="badge badge-${r.priority}" style="margin-left:auto">${esc(r.priority)}</span>
+        </div>
+        <div class="ki-title">${esc(r.title)}</div>
+        <div class="ki-desc">${esc(r.description)}</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-top:4px">
+          ↳ Originado de: <span style="color:var(--m1)">${esc(r.origin)}</span>
+        </div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--soft);margin-top:3px;font-style:italic">${esc(r.rationale)}</div>
+      </article>`).join('');
+  }
+
+  let html = '';
+
+  // Summary
+  html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+      <div><span style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m1)">${(inf.rfs||[]).length}</span> <span style="font-size:10px;font-family:var(--mono);color:var(--text-muted)">RFs</span></div>
+      <div><span style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m5)">${(inf.rnfs||[]).length}</span> <span style="font-size:10px;font-family:var(--mono);color:var(--text-muted)">RNFs</span></div>
+      <div><span style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--err)">${(inf.missing||[]).length}</span> <span style="font-size:10px;font-family:var(--mono);color:var(--text-muted)">ausentes</span></div>
+    </div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--text-secondary)">${esc(inf.verdict||'')}</div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:4px">${esc(inf.summary||'')}</div>
+  </div>`;
+
+  // RFs
+  html += `<div class="section-hd" style="margin-top:0"><h3 class="section-title" style="color:var(--m1)">Requisitos Funcionais (${(inf.rfs||[]).length})</h3></div>`;
+  html += reqTable(inf.rfs, 'var(--m1)');
+
+  // RNFs
+  html += `<div class="section-hd" style="margin-top:16px"><h3 class="section-title" style="color:var(--m5)">Requisitos Não-Funcionais (${(inf.rnfs||[]).length})</h3></div>`;
+  html += reqTable(inf.rnfs, 'var(--m5)');
+
+  // Missing
+  if (inf.missing?.length) {
+    html += `<div class="section-hd" style="margin-top:16px"><h3 class="section-title" style="color:var(--err)">Requisitos Ausentes (${inf.missing.length})</h3></div>`;
+    html += inf.missing.map(m => `
+      <div style="background:var(--s1);border:1px solid var(--b1);border-left:3px solid var(--err);border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:11px;font-family:var(--mono);color:var(--text-secondary)">
+        ✗ ${esc(m)}
+      </div>`).join('');
   }
 
   el.innerHTML = html;
@@ -1040,6 +1156,10 @@ function updateCounts() {
   document.getElementById('cnt-knowledge').textContent = kTotal;
   const traItems = window._latestTraceability?.items?.length || 0;
   document.getElementById('cnt-traceability').textContent = traItems;
+  const infItems = (window._latestInference?.total) || 0;
+  document.getElementById('cnt-inference').textContent = infItems;
+  const artItems = (window._latestArtifacts?.artifacts?.length) || 0;
+  document.getElementById('cnt-artifacts').textContent = artItems || '0';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1274,6 +1394,241 @@ function toast(msg, color = 'var(--ok)') {
   toastT = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
+
+// ── Artifact generation in story page ────────────────────────────────────────
+const PROFILES_STORY = [
+  {id:'qa',    label:'QA',        color:'#26c6da', icon:'🧪', desc:'Gherkin · Robot Framework · Test Cases · Evidence'},
+  {id:'dev',   label:'Dev',       color:'#4f8fff', icon:'⚙',  desc:'Automation Skeletons · Gap Analysis Técnico'},
+  {id:'po',    label:'PO',        color:'#9b6fff', icon:'📋', desc:'Critérios de Aceite · Business Value'},
+  {id:'audit', label:'Auditoria', color:'#ff5252', icon:'🔐', desc:'Risk Report · RTM Exportável'},
+];
+
+
+function renderSavedArtifacts() {
+  const arts = window._latestArtifacts;
+  const analysisId = window._latestAnalysisId;
+  const el = document.getElementById('artifacts-content');
+  if (!el) return;
+
+  if (!arts || !arts.artifacts?.length) {
+    // Show generation UI if no saved artifacts
+    if (analysisId) {
+      // Auto-show generation form for latest version
+      el.innerHTML = buildArtifactGenerationUI(analysisId, 'v' + (versions[0]?.version || '?'));
+    }
+    return;
+  }
+
+  // Has saved artifacts — show them grouped by profile
+  const PROFILE_LABEL = {qa:'QA', dev:'Dev', po:'PO', audit:'Auditoria'};
+  const PROFILE_COLOR = {qa:'#26c6da', dev:'#4f8fff', po:'#9b6fff', audit:'#ff5252'};
+  const byProfile = {};
+  arts.artifacts.forEach(a => {
+    if (!byProfile[a.profile]) byProfile[a.profile] = [];
+    byProfile[a.profile].push(a);
+  });
+
+  let html = `<div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted)">
+      ${arts.artifacts.length} artefato(s) salvo(s) · ${arts.summary || ''}
+    </div>
+    <button onclick="regenerateArtifacts()" class="btn btn-ghost btn-sm">↻ Regenerar</button>
+  </div>`;
+
+  Object.entries(byProfile).forEach(([profile, items]) => {
+    const color = PROFILE_COLOR[profile] || 'var(--text-muted)';
+    const label = PROFILE_LABEL[profile] || profile;
+    html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden;margin-bottom:10px">
+      <div style="padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:600;color:${color}">${label}</span>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">${items.length} artefato(s)</span>
+      </div>
+      ${items.map(a => `
+        <div style="border-top:1px solid var(--b1);padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text-primary)">${esc(a.title)}</span>
+            <button onclick="copyContent('saved-art-${a.id}')"
+              style="margin-left:auto;font-size:9px;font-family:var(--mono);padding:2px 9px;border-radius:3px;background:var(--s3);border:1px solid var(--b1);color:var(--text-muted);cursor:pointer"
+              aria-label="Copiar ${esc(a.title)}">⎘ copiar</button>
+            <button onclick="downloadContent('saved-art-${a.id}','artifact_${a.id}.${a.format === 'gherkin' ? 'feature' : a.format === 'robot' ? 'robot' : 'md'}')"
+              style="font-size:9px;font-family:var(--mono);padding:2px 9px;border-radius:3px;background:var(--s3);border:1px solid var(--b1);color:var(--text-muted);cursor:pointer"
+              aria-label="Download ${esc(a.title)}">↓ download</button>
+          </div>
+          <pre id="saved-art-${a.id}"
+            style="font-family:var(--mono);font-size:10px;color:var(--text-secondary);
+                   background:var(--bg);border:1px solid var(--b1);border-radius:6px;
+                   padding:12px;overflow-x:auto;max-height:280px;overflow-y:auto;
+                   white-space:pre-wrap;word-break:break-word;line-height:1.65">${esc(a.content)}</pre>
+        </div>`).join('')}
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function buildArtifactGenerationUI(analysisId, versionLabel) {
+  const PROFILES_UI = [
+    {id:'qa',    label:'QA',        color:'#26c6da', icon:'🧪', desc:'Gherkin · Robot Framework · Test Cases · Evidence'},
+    {id:'dev',   label:'Dev',       color:'#4f8fff', icon:'⚙',  desc:'Automation Skeletons · Gap Analysis Técnico'},
+    {id:'po',    label:'PO',        color:'#9b6fff', icon:'📋', desc:'Critérios de Aceite · Business Value'},
+    {id:'audit', label:'Auditoria', color:'#ff5252', icon:'🔐', desc:'Risk Report · RTM Exportável'},
+  ];
+  return `<div style="display:flex;flex-direction:column;gap:12px">
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:12px 16px;font-size:10px;font-family:var(--mono);color:var(--text-muted)">
+      Análise ${versionLabel} · Clique em Gerar para criar os artefatos
+    </div>
+    ${PROFILES_UI.map(p => `
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:11px 16px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
+          <span>${p.icon}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)">${p.label}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">${p.desc}</div>
+          </div>
+          <button onclick="runArtifactProfile('${analysisId}','${p.id}','${p.label}',this)"
+            style="padding:6px 14px;border-radius:5px;background:${p.color};color:#fff;
+                   font-family:var(--font);font-size:11px;font-weight:600;border:none;cursor:pointer">
+            ⚡ Gerar
+          </button>
+        </div>
+        <div id="story-art-${p.id}" style="display:none"></div>
+      </div>`).join('')}
+    <button onclick="runAllArtifacts('${analysisId}')"
+      style="width:100%;padding:10px;border-radius:6px;background:linear-gradient(135deg,#26c6da,#9b6fff);
+             color:#fff;font-family:var(--font);font-size:12px;font-weight:700;border:none;cursor:pointer">
+      ⚡ Gerar Todos os Perfis
+    </button>
+  </div>`;
+}
+
+function regenerateArtifacts() {
+  if (window._latestAnalysisId) {
+    const el = document.getElementById('artifacts-content');
+    const ver = versions[0]?.version || '?';
+    el.innerHTML = buildArtifactGenerationUI(window._latestAnalysisId, 'v' + ver);
+  }
+}
+
+async function generateArtifactsStory(analysisId, version) {
+  window._latestAnalysisId = analysisId;
+  // Switch to artifacts tab
+  const btn = document.getElementById('btn-artifacts');
+  switchTab('artifacts', btn);
+
+  const el = document.getElementById('artifacts-content');
+  el.innerHTML = `<div class="loading" role="status"><div class="loading-bar"><div class="loading-fill"></div></div><div class="loading-label">Preparando geração de artefatos (v${version})...</div></div>`;
+
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:12px 16px;font-size:10px;font-family:var(--mono);color:var(--text-muted)">
+      Gerando artefatos da análise v${version} · ID: ${analysisId}
+    </div>
+    ${PROFILES_STORY.map(p => `
+      <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:11px 16px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
+          <span>${p.icon}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)">${p.label}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">${p.desc}</div>
+          </div>
+          <button onclick="runArtifactProfile('${analysisId}','${p.id}','${p.label}',this)"
+            style="padding:6px 14px;border-radius:5px;background:${p.color};color:#fff;
+                   font-family:var(--font);font-size:11px;font-weight:600;border:none;cursor:pointer"
+            aria-label="Gerar artefatos ${p.label}">
+            ⚡ Gerar
+          </button>
+        </div>
+        <div id="story-art-${p.id}" style="display:none"></div>
+      </div>`).join('')}
+    <button onclick="runAllArtifacts('${analysisId}')"
+      style="width:100%;padding:10px;border-radius:6px;background:linear-gradient(135deg,#26c6da,#9b6fff);
+             color:#fff;font-family:var(--font);font-size:12px;font-weight:700;border:none;cursor:pointer"
+      aria-label="Gerar todos os artefatos">
+      ⚡ Gerar Todos os Perfis
+    </button>
+  </div>`;
+
+  document.getElementById('cnt-artifacts').textContent = '→';
+}
+
+async function runArtifactProfile(analysisId, profile, label, btn) {
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳...';
+
+  try {
+    const r = await fetch(`${API()}/api/v1/artifacts/generate`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({analysis_id: analysisId, profiles: [profile]}),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const artifacts = (data.artifacts || []).filter(a => a.profile === profile);
+
+    const el = document.getElementById('story-art-' + profile);
+    if (!el) return;
+    el.style.display = '';
+    el.innerHTML = artifacts.map(a => `
+      <div style="border-top:1px solid var(--b1);padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text-primary)">${esc(a.title)}</span>
+          <button onclick="copyContent('story-art-c-${a.id}')"
+            style="margin-left:auto;font-size:9px;font-family:var(--mono);padding:2px 9px;border-radius:3px;background:var(--s3);border:1px solid var(--b1);color:var(--text-muted);cursor:pointer"
+            aria-label="Copiar ${esc(a.title)}">⎘ copiar</button>
+          <button onclick="downloadContent('story-art-c-${a.id}','artifact_${a.id}.${a.format==='gherkin'?'feature':a.format==='robot'?'robot':'md'}')"
+            style="font-size:9px;font-family:var(--mono);padding:2px 9px;border-radius:3px;background:var(--s3);border:1px solid var(--b1);color:var(--text-muted);cursor:pointer"
+            aria-label="Download ${esc(a.title)}">↓ download</button>
+        </div>
+        <pre id="story-art-c-${a.id}"
+          style="font-family:var(--mono);font-size:10px;color:var(--text-secondary);
+                 background:var(--bg);border:1px solid var(--b1);border-radius:6px;
+                 padding:12px;overflow-x:auto;max-height:300px;overflow-y:auto;
+                 white-space:pre-wrap;word-break:break-word;line-height:1.65">${esc(a.content)}</pre>
+      </div>`).join('');
+
+    toast(`${label}: ${artifacts.length} artefato(s) gerado(s)`, 'var(--ok)');
+    // Reload saved artifacts after generation
+    if (window._latestAnalysisId) {
+      try {
+        const r2 = await fetch(`${API()}/api/v1/history/${window._latestAnalysisId}`);
+        if (r2.ok) {
+          const d2 = await r2.json();
+          window._latestArtifacts = d2?.result?.artifacts || null;
+          const cnt = document.getElementById('cnt-artifacts');
+          if (cnt) cnt.textContent = window._latestArtifacts?.artifacts?.length || 0;
+        }
+      } catch(e) {}
+    }
+  } catch(e) {
+    toast('Erro: ' + e.message, 'var(--err)');
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+}
+
+async function runAllArtifacts(analysisId) {
+  for (const p of PROFILES_STORY) {
+    const btn = document.querySelector(`button[onclick*="runArtifactProfile('${analysisId}','${p.id}'"]`);
+    if (btn) await runArtifactProfile(analysisId, p.id, p.label, btn);
+  }
+}
+
+function copyContent(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.textContent).then(() => toast('Copiado!', 'var(--ok)'));
+}
+
+function downloadContent(elementId, filename) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const blob = new Blob([el.textContent], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  toast('Download iniciado', 'var(--ok)');
+}
 // ── Keyboard navigation ───────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {

@@ -27,6 +27,7 @@ from utils.config      import settings
 from engines import normalizer, ambiguity, risk, rules, gap, coverage, synthesis
 import engines.knowledge_aggregator as knowledge_aggregator_mod
 import engines.traceability as traceability_mod
+import engines.requirements_inference as inference_mod
 from repositories.analysis import AnalysisRepository
 from repositories.project  import ProjectRepository
 
@@ -100,12 +101,24 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
 
     # Determine which engines to run
     requested = set(request.engines) if request.engines else None
+
+    async def run_inference(normalized, provider, max_tokens):
+        """Wrapper to match engine_map signature."""
+        return await inference_mod.run(
+            normalized=normalized,
+            ambiguity=None, risk=None, rules=None, gap=None,
+            provider=provider,
+            max_tokens=max_tokens,
+            language=settings.ENGINE_LANGUAGE,
+        )
+
     engine_map = {
         "ambiguity": ambiguity.run,
         "risk":      risk.run,
         "rules":     rules.run,
         "gap":       gap.run,
         "coverage":  coverage.run,
+        "inference": run_inference,
     }
     engines_to_run = {
         name: fn for name, fn in engine_map.items()
@@ -138,6 +151,9 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
         elif engine_name == "coverage":
             response.coverage = cov_result = result
             timings.coverage  = elapsed
+        elif engine_name == "inference":
+            response.inference = result
+            timings.__dict__["inference"] = elapsed
 
     # ── Stage 2.5: Knowledge Aggregator + Traceability (parallel) ────────────
     # Both run after the 5 engines, before Synthesis.

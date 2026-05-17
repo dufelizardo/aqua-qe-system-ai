@@ -542,6 +542,11 @@ textarea.rw-ta::placeholder{color:var(--muted);}
         <div class="flow-label">Cobertura</div>
         <div class="flow-score" id="fsc-cov"></div>
       </div>
+      <div class="flow-step" id="fs-inf">
+        <div class="flow-dot" style="background:var(--m5)">I</div>
+        <div class="flow-label">Inferência</div>
+        <div class="flow-score" id="fsc-inf"></div>
+      </div>
       <div class="flow-step" id="fs-synth">
         <div class="flow-dot" style="background:linear-gradient(135deg,var(--m1),var(--m2))">S</div>
         <div class="flow-label">Síntese</div>
@@ -947,13 +952,27 @@ function renderCardGeneric(n, r, summary, items){
 }
 
 function renderCard5(r){
-  document.getElementById('card-m5').classList.add('has-result');
-  const formats = ['Robot Framework (.robot)','Gherkin (.feature)','Xray JSON','Jira tickets','HTML Report'];
-  document.getElementById('score-m5').textContent='↗';
-  document.getElementById('score-m5').style.color='var(--m5)';
-  document.getElementById('preview-m5').innerHTML = formats.map(f=>
-    `<div class="mc-finding"><div class="mf-dot" style="background:var(--m5)"></div><span>${f}</span></div>`
-  ).join('');
+  const card = document.getElementById('card-m5');
+  const preview = document.getElementById('preview-m5');
+  const scoreEl = document.getElementById('score-m5');
+  card.classList.add('has-result');
+  scoreEl.textContent = '→';
+  scoreEl.style.color = 'var(--m5)';
+
+  // Show profiles available to generate
+  const profiles = [
+    {id:'qa',    label:'QA',       color:'var(--m3)', items:['Gherkin','Robot Framework','Test Cases','Evidence']},
+    {id:'dev',   label:'Dev',      color:'var(--m1)', items:['Skeletons','Gap Analysis']},
+    {id:'po',    label:'PO',       color:'var(--m2)', items:['Critérios de Aceite','Business Value','Gap Funcional']},
+    {id:'audit', label:'Auditoria',color:'var(--m4)', items:['Risk Report','RTM']},
+  ];
+
+  preview.innerHTML = profiles.map(p => `
+    <div class="mc-finding">
+      <div class="mf-dot" style="background:${p.color}"></div>
+      <span style="color:var(--bright);font-weight:500">${p.label}</span>
+      <span style="color:var(--muted);font-size:9px;margin-left:4px">${p.items.join(' · ')}</span>
+    </div>`).join('');
 }
 
 function renderSynthesis(s){
@@ -1034,7 +1053,9 @@ function openModule(n){
   const body = document.getElementById('mo-body');
   body.innerHTML = '';
 
-  if(!state.lastResult || !meta.engines.length){
+  if(n===5){
+    body.innerHTML = buildArtifactModuleReal(state.lastResult);
+  } else if(!state.lastResult || !meta.engines.length){
     body.innerHTML = buildModulePlaceholder(n, state.lastResult);
   } else {
     meta.engines.forEach(engKey=>{
@@ -1085,7 +1106,7 @@ function openModule(n){
         body.appendChild(cb);
       }
     }
-    if(n===5) body.innerHTML = buildArtifactModule();
+    if(n===5) body.innerHTML = buildArtifactModuleReal(state.lastResult);
   }
 
   ov.classList.add('open');
@@ -1287,6 +1308,56 @@ function buildModulePlaceholder(n, result){
     5: buildArtifactModule(),
   };
   return placeholders[n]||'';
+}
+
+function buildArtifactModuleReal(result) {
+  if (!result) return '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">Analise um requisito primeiro para gerar artefatos.</div>';
+
+  const analysisId = result.request_id;
+  const profiles = [
+    {id:'qa',    label:'QA',        color:'var(--m3)', icon:'🧪', desc:'Gherkin · Robot Framework · Test Cases · Evidence'},
+    {id:'dev',   label:'Dev',       color:'var(--m1)', icon:'⚙',  desc:'Automation Skeletons · Gap Analysis Técnico'},
+    {id:'po',    label:'PO',        color:'var(--m2)', icon:'📋', desc:'Critérios de Aceite · Business Value · Gap Funcional'},
+    {id:'audit', label:'Auditoria', color:'var(--m4)', icon:'🔐', desc:'Risk Report · RTM Exportável'},
+  ];
+
+  return `<div style="display:flex;flex-direction:column;gap:14px">
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--bright);margin-bottom:8px">
+        Selecione o perfil e clique em Gerar. Os artefatos usam o contexto completo do pipeline.
+      </div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">
+        Analysis ID: ${analysisId}
+      </div>
+    </div>
+
+    ${profiles.map(p => `
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:12px 16px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px">${p.icon}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:var(--white)">${p.label}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">${p.desc}</div>
+          </div>
+          <button onclick="generateArtifacts('${analysisId}','${p.id}',this)"
+            style="padding:6px 14px;border-radius:5px;background:${p.color};color:#fff;
+                   font-family:var(--font);font-size:11px;font-weight:600;border:none;cursor:pointer"
+            aria-label="Gerar artefatos para perfil ${p.label}">
+            ⚡ Gerar
+          </button>
+        </div>
+        <div id="art-result-${p.id}" style="display:none"></div>
+      </div>`).join('')}
+
+    <button onclick="generateArtifacts('${analysisId}',null,this)"
+      style="width:100%;padding:11px;border-radius:6px;
+             background:linear-gradient(135deg,var(--m3),var(--m2));
+             color:#fff;font-family:var(--font);font-size:12px;font-weight:700;
+             border:none;cursor:pointer"
+      aria-label="Gerar todos os artefatos">
+      ⚡ Gerar Todos os Perfis
+    </button>
+  </div>`;
 }
 
 function buildArtifactModule(){
@@ -1512,6 +1583,194 @@ if(state.lastResult) renderAll(state.lastResult);
 let historyData = [];
 let historyFiltered = [];
 let activeHistId = null;
+
+
+async function generateArtifacts(analysisId, profile, btn) {
+  if (!analysisId) { toast('Sem análise disponível', 'var(--err)'); return; }
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando...';
+  setStatus('run', 'gerando artefatos...');
+
+  try {
+    const body = { analysis_id: analysisId };
+    if (profile) body.profiles = [profile];
+
+    const r = await fetch(config.backendUrl.replace(/\/$/, '') + '/api/v1/artifacts/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + await r.text());
+    const data = await r.json();
+    const artifacts = data.artifacts || [];
+
+    // Group by profile and render
+    const byProfile = {};
+    artifacts.forEach(a => {
+      if (!byProfile[a.profile]) byProfile[a.profile] = [];
+      byProfile[a.profile].push(a);
+    });
+
+    Object.entries(byProfile).forEach(([prof, arts]) => {
+      const el = document.getElementById('art-result-' + prof);
+      if (!el) return;
+      el.style.display = '';
+      el.innerHTML = arts.map(a => `
+        <div style="border-top:1px solid var(--b1);padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:10px;font-family:var(--mono);font-weight:600;color:var(--bright)">${a.title}</span>
+            <button onclick="copyArtifact('${a.id}', this)"
+              style="margin-left:auto;font-size:9px;font-family:var(--mono);padding:2px 9px;
+                     border-radius:3px;background:var(--s4);border:1px solid var(--b2);
+                     color:var(--soft);cursor:pointer"
+              aria-label="Copiar ${a.title}">⎘ copiar</button>
+            <button onclick="downloadArtifact('${a.id}', '${a.format}', this)"
+              style="font-size:9px;font-family:var(--mono);padding:2px 9px;
+                     border-radius:3px;background:var(--s4);border:1px solid var(--b2);
+                     color:var(--soft);cursor:pointer"
+              aria-label="Download ${a.title}">↓ download</button>
+          </div>
+          <pre id="art-content-${a.id}"
+            style="font-family:var(--mono);font-size:10px;color:var(--bright);
+                   background:var(--bg);border:1px solid var(--b1);border-radius:6px;
+                   padding:12px;overflow-x:auto;max-height:320px;overflow-y:auto;
+                   white-space:pre-wrap;word-break:break-word;line-height:1.65">${escHist(a.content)}</pre>
+        </div>`).join('');
+    });
+
+    setStatus('ok', 'artefatos gerados');
+    toast(`${artifacts.length} artefato(s) gerado(s)`, 'var(--ok)');
+  } catch(e) {
+    setStatus('err', 'erro');
+    toast('Erro: ' + e.message, 'var(--err)');
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+}
+
+// Artifact content stored in DOM for copy/download
+function copyArtifact(id, btn) {
+  const el = document.getElementById('art-content-' + id);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.textContent).then(() => toast('Copiado!', 'var(--ok)'));
+}
+
+function downloadArtifact(id, fmt, btn) {
+  const el = document.getElementById('art-content-' + id);
+  if (!el) return;
+  const ext = {gherkin:'.feature', robot:'.robot', markdown:'.md', json:'.json', html:'.html'}[fmt] || '.txt';
+  const blob = new Blob([el.textContent], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'artifact_' + id + ext;
+  a.click();
+  toast('Download iniciado', 'var(--ok)');
+}
+
+function escHist(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+
+function renderInferenceCard(r) {
+  const inf = r.inference;
+  if (!inf) return;
+
+  // Make sure hub grid is accessible
+  const hubGrid = document.querySelector('.hub-grid');
+  if (!hubGrid) return;
+
+  let infCard = document.getElementById('inference-card');
+  if (!infCard) {
+    const synthCard = document.getElementById('card-synth');
+    infCard = document.createElement('div');
+    infCard.id = 'inference-card';
+    infCard.style.cssText = 'background:var(--s2);border:1px solid var(--b1);border-radius:12px;overflow:hidden;grid-column:1/-1;border-top:3px solid var(--m5)';
+    synthCard.parentNode.insertBefore(infCard, synthCard);
+  }
+
+  const rfCount  = (inf.rfs  || []).length;
+  const rnfCount = (inf.rnfs || []).length;
+  const misCount = (inf.missing || []).length;
+  const scoreColor = rfCount + rnfCount > 8 ? 'var(--warn)' : 'var(--ok)';
+
+  const catColor = {
+    funcional:'var(--m1)',integracao:'var(--m3)',dados:'var(--m2)',
+    interface:'var(--m5)',negocio:'var(--ok)',
+    performance:'var(--m3)',seguranca:'var(--err)',disponibilidade:'var(--ok)',
+    compliance:'var(--warn)',usabilidade:'var(--m1)',manutencao:'var(--muted)',
+    escalabilidade:'var(--m2)'
+  };
+
+  const prioColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+
+  infCard.innerHTML = `
+    <div style="padding:14px 20px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:12px">
+      <div style="font-size:20px">🔍</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:var(--white)">Requirements Inference Engine</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px">${inf.verdict || ''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-family:var(--mono);font-weight:700;color:${scoreColor}">${rfCount + rnfCount}</div>
+        <div style="font-size:8px;font-family:var(--mono);color:var(--muted)">requisitos inferidos</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b1)">
+
+      <!-- RFs -->
+      <div style="background:var(--s2);padding:14px 16px">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--m1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">
+          Requisitos Funcionais inferidos (${rfCount})
+        </div>
+        ${(inf.rfs || []).slice(0,5).map(r => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span style="font-size:9px;font-family:var(--mono);font-weight:700;color:var(--m1)">${r.id}</span>
+              <span style="font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:8px;background:rgba(79,143,255,.1);color:${catColor[r.category]||'var(--muted)'}">${r.category}</span>
+              <span style="margin-left:auto;font-size:8px;font-family:var(--mono);color:${prioColor[r.priority]||'var(--muted)'}">${r.priority}</span>
+            </div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--bright)">${r.title}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px">↳ ${r.origin}</div>
+          </div>`).join('')}
+        ${rfCount > 5 ? `<div style="font-size:9px;font-family:var(--mono);color:var(--muted);padding-top:6px">+${rfCount-5} mais — abra o módulo para ver todos</div>` : ''}
+      </div>
+
+      <!-- RNFs -->
+      <div style="background:var(--s2);padding:14px 16px">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--m5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">
+          Requisitos Não-Funcionais inferidos (${rnfCount})
+        </div>
+        ${(inf.rnfs || []).slice(0,5).map(r => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--b1)">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span style="font-size:9px;font-family:var(--mono);font-weight:700;color:var(--m5)">${r.id}</span>
+              <span style="font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:8px;background:rgba(255,171,64,.1);color:${catColor[r.category]||'var(--muted)'}">${r.category}</span>
+              <span style="margin-left:auto;font-size:8px;font-family:var(--mono);color:${prioColor[r.priority]||'var(--muted)'}">${r.priority}</span>
+            </div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--bright)">${r.title}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px">↳ ${r.origin}</div>
+          </div>`).join('')}
+        ${rnfCount > 5 ? `<div style="font-size:9px;font-family:var(--mono);color:var(--muted);padding-top:6px">+${rnfCount-5} mais</div>` : ''}
+      </div>
+    </div>
+
+    ${misCount ? `<div style="padding:12px 16px;border-top:1px solid var(--b1)">
+      <div style="font-size:9px;font-family:var(--mono);color:var(--err);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">
+        Requisitos ausentes (${misCount})
+      </div>
+      ${(inf.missing || []).slice(0,3).map(m => `
+        <div style="font-size:10px;font-family:var(--mono);color:var(--soft);padding:3px 0;display:flex;gap:6px">
+          <span style="color:var(--err)">✗</span>${m}
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div style="padding:10px 16px;border-top:1px solid var(--b1);font-size:10px;font-family:var(--mono);color:var(--soft)">
+      ${inf.summary || ''}
+    </div>`;
+}
 
 async function loadHistory() {
   const list = document.getElementById('hd-list');

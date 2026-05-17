@@ -159,8 +159,8 @@ def to_json(obj) -> str:
     if obj is None:
         return None
     if hasattr(obj, "model_dump"):
-        return json.dumps(obj.model_dump())
-    return json.dumps(obj)
+        return json.dumps(obj.model_dump(mode='json'), default=str)
+    return json.dumps(obj, default=str)
 
 
 def from_json(s: str):

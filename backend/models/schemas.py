@@ -169,6 +169,53 @@ class TraceabilityResult(BaseModel):
     verdict:         str = ""
 
 
+class ArtifactItem(BaseModel):
+    """A single generated artifact."""
+    id:          str
+    profile:     str   # qa | dev | po | audit
+    type:        str   # gherkin | robot | test_cases | evidence | skeleton | gap_analysis | ca | business_value | risk_report | rtm
+    title:       str
+    content:     str
+    format:      str   # markdown | robot | gherkin | json | csv | html
+    story_id:    Optional[str] = None
+    version:     Optional[int] = None
+    refs:        list[str] = []  # finding IDs used to generate this artifact
+
+
+class ArtifactResult(BaseModel):
+    """Full artifact generation result — all profiles."""
+    engine:      str = "artifact_generator"
+    status:      EngineStatus = EngineStatus.DONE
+    story_id:    Optional[str] = None
+    artifacts:   list[ArtifactItem] = []
+    summary:     str = ""
+
+
+class InferredRequirement(BaseModel):
+    """A single inferred requirement (RF or RNF)."""
+    id:          str
+    type:        str   # RF | RNF
+    category:    str   # funcional | performance | seguranca | disponibilidade | compliance | usabilidade | dados
+    title:       str
+    description: str
+    rationale:   str   # why this was inferred
+    origin:      str   # which RN/CA/gap/risk originated this
+    priority:    str   # critical | high | medium | low
+    tags:        list[str] = []
+
+
+class InferenceResult(BaseModel):
+    """Full output of the Requirements Inference Engine."""
+    engine:      str = "requirements_inference"
+    status:      EngineStatus = EngineStatus.DONE
+    rfs:         list[InferredRequirement] = []   # Functional requirements
+    rnfs:        list[InferredRequirement] = []   # Non-functional requirements
+    missing:     list[str] = []                   # Requirements that should exist but don't
+    total:       int = 0
+    summary:     str = ""
+    verdict:     str = ""
+
+
 class AnalysisResponse(BaseModel):
     """Full response returned to the frontend."""
     request_id:  str
@@ -184,6 +231,8 @@ class AnalysisResponse(BaseModel):
     coverage:       Optional[CoverageResult]        = None
     traceability:   Optional[TraceabilityResult]    = None
     knowledge:      Optional[dict]                  = None
+    inference:      Optional[InferenceResult]       = None
+    artifacts:      Optional[ArtifactResult]        = None
     synthesis:      Optional[SynthesisResult]       = None
 
     timings:     EngineTimings = EngineTimings()
