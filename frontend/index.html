@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="QA Intelligence System - Hub central de análise de requisitos">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Intelligence System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060810; --s1:#090c14; --s2:#0d1120; --s3:#111829; --s4:#162035;
+  --b1:#1a2840; --b2:#22334f; --b3:#2c4268;
+  --muted:#324e70; --soft:#476898; --body:#6a8fb0;
+  --bright:#94b8d4; --hi:#bcd6e8; --white:#ddeef8;
+  --font:'Sora',sans-serif; --mono:'Inconsolata',monospace;
+  --m1:#4f8fff; --m2:#9b6fff; --m3:#26c6da; --m4:#ff5252; --m5:#ffab40;
+  --ok:#4caf8a; --warn:#ffab40; --err:#ff5252;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--body);}
+
+/* ── TOP BAR ── */
+.topbar{
+  height:52px;display:flex;align-items:center;gap:16px;
+  padding:0 28px;border-bottom:1px solid var(--b1);
+  background:var(--s1);position:fixed;top:0;left:0;right:0;z-index:200;
+}
+.tb-logo{display:flex;align-items:center;gap:10px;}
+.logo-glyph{
+  width:28px;height:28px;
+  background:linear-gradient(135deg,var(--m1),var(--m2));
+  border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;font-weight:500;color:#fff;
+}
+.tb-name{font-size:13px;font-weight:700;color:var(--white);letter-spacing:-.01em;}
+.tb-version{font-size:9px;font-family:var(--mono);color:var(--muted);}
+.tb-sep{width:1px;height:20px;background:var(--b2);margin:0 4px;}
+.tb-state{
+  display:flex;align-items:center;gap:8px;flex:1;
+  font-size:10px;font-family:var(--mono);
+}
+.ts-label{color:var(--muted);}
+.ts-req{
+  color:var(--bright);background:var(--s3);border:1px solid var(--b1);
+  border-radius:4px;padding:3px 10px;max-width:360px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:pointer;transition:border-color .15s;
+}
+.ts-req:hover{border-color:var(--b2);}
+.ts-req.empty{color:var(--muted);font-style:italic;}
+.ts-clear{color:var(--muted);cursor:pointer;font-size:11px;background:none;border:none;transition:color .12s;}
+.ts-clear:hover{color:var(--err);}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.tb-status{display:flex;align-items:center;gap:5px;font-size:9px;font-family:var(--mono);color:var(--muted);}
+.status-led{width:5px;height:5px;border-radius:50%;background:var(--muted);}
+.status-led.ok{background:var(--ok);}
+.status-led.run{background:var(--warn);animation:blink .7s ease infinite;}
+.status-led.err{background:var(--err);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hbtn{display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:5px;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:none;letter-spacing:.02em;}
+.hbtn-ghost{background:transparent;color:var(--soft);border:1px solid var(--b2);}
+.hbtn-ghost:hover{background:var(--s3);color:var(--bright);}
+
+/* ── HUB MAIN ── */
+.hub{
+  position:fixed;top:52px;left:0;right:0;bottom:0;
+  overflow:hidden;
+  transition:opacity .3s,transform .3s;
+}
+.hub.hidden{opacity:0;pointer-events:none;transform:scale(.97);}
+
+/* grid of module cards */
+.hub-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:auto auto;
+  gap:20px;
+  padding:32px 40px;
+  height:100%;overflow-y:auto;
+  align-content:start;
+}
+.hub-grid::-webkit-scrollbar{width:5px;}
+.hub-grid::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+
+/* hero input */
+.hub-hero{
+  grid-column:1/-1;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:16px 0 8px;
+}
+.hub-title{
+  font-size:28px;font-weight:700;color:var(--white);
+  letter-spacing:-.03em;text-align:center;
+}
+.hub-title em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--m1),var(--m2),var(--m3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hub-sub{font-size:11px;font-family:var(--mono);color:var(--soft);text-align:center;max-width:500px;line-height:1.7;}
+
+.req-input-wrap{
+  width:100%;max-width:640px;
+  background:var(--s2);border:1px solid var(--b1);border-radius:10px;overflow:hidden;
+  transition:border-color .2s;
+}
+.req-input-wrap:focus-within{border-color:var(--b2);}
+.rw-label{
+  padding:9px 14px;border-bottom:1px solid var(--b1);
+  font-size:8px;font-family:var(--mono);color:var(--muted);
+  text-transform:uppercase;letter-spacing:.12em;
+  display:flex;justify-content:space-between;
+}
+.rw-label span{color:var(--m1);}
+textarea.rw-ta{
+  width:100%;background:transparent;border:none;outline:none;
+  font-family:var(--mono);font-size:11px;color:var(--bright);
+  padding:12px 14px;resize:none;line-height:1.65;
+}
+textarea.rw-ta::placeholder{color:var(--muted);}
+.rw-footer{
+  padding:9px 12px;border-top:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--s3);
+}
+.rw-hint{font-size:8px;font-family:var(--mono);color:var(--muted);}
+.analyze-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 18px;border-radius:5px;
+  background:var(--m1);color:#fff;
+  font-family:var(--font);font-size:11px;font-weight:700;
+  border:none;cursor:pointer;transition:opacity .15s;
+  letter-spacing:.03em;
+}
+.analyze-btn:hover{opacity:.87;}
+.analyze-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* pipeline flow bar */
+.flow-bar{
+  grid-column:1/-1;
+  display:flex;align-items:center;justify-content:center;gap:0;
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:12px 20px;
+}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:4px 16px;position:relative;
+}
+.flow-step::after{
+  content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);
+  font-size:14px;color:var(--b3);
+}
+.flow-step:last-child::after{display:none;}
+.flow-dot{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;
+  opacity:.35;transition:opacity .4s,transform .3s;
+}
+.flow-step.done .flow-dot{opacity:1;transform:scale(1.1);}
+.flow-step.run .flow-dot{opacity:.8;animation:fpulse .8s ease infinite;}
+@keyframes fpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.flow-label{font-size:8px;font-family:var(--mono);color:var(--muted);text-align:center;line-height:1.3;}
+.flow-step.done .flow-label{color:var(--bright);}
+.flow-score{font-size:9px;font-family:var(--mono);font-weight:700;min-height:13px;text-align:center;}
+
+/* module cards */
+.mod-card{
+  background:var(--s2);border:1px solid var(--b1);border-radius:12px;
+  cursor:pointer;transition:all .2s;overflow:hidden;
+  display:flex;flex-direction:column;
+  border-top:3px solid transparent;
+  position:relative;
+}
+.mod-card:hover{background:var(--s3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.mod-card.has-result{border-top-color:var(--accent);}
+.mc-head{padding:16px 18px 12px;display:flex;align-items:flex-start;gap:12px;}
+.mc-num{
+  width:36px;height:36px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;
+}
+.mc-info{flex:1;}
+.mc-name{font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;}
+.mc-sub{font-size:9px;font-family:var(--mono);color:var(--muted);}
+.mc-score{
+  font-size:22px;font-family:var(--mono);font-weight:700;
+  flex-shrink:0;line-height:1;
+}
+.mc-body{padding:0 18px 14px;flex:1;}
+.mc-summary{font-size:10px;font-family:var(--mono);color:var(--soft);line-height:1.65;margin-bottom:10px;}
+.mc-findings{display:flex;flex-direction:column;gap:4px;}
+.mc-finding{
+  display:flex;align-items:flex-start;gap:6px;
+  font-size:9px;font-family:var(--mono);color:var(--body);line-height:1.5;
+}
+.mf-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.mc-empty{
+  padding:24px 18px;text-align:center;
+  font-size:10px;font-family:var(--mono);color:var(--muted);line-height:1.7;
+}
+.mc-open-btn{
+  margin:0 18px 14px;padding:7px;
+  background:var(--s4);border:1px solid var(--b1);border-radius:5px;
+  font-size:9px;font-family:var(--mono);color:var(--soft);
+  text-align:center;transition:all .15s;
+}
+.mod-card:hover .mc-open-btn{background:var(--b1);color:var(--bright);}
+
+/* synthesis card - full width */
+.synth-card{
+  grid-column:1/-1;
+  background:var(--s2);border:1px solid var(--b1);border-radius:12px;
+  overflow:hidden;border-top:3px solid transparent;
+  transition:border-color .3s;
+}
+.synth-card.has-result{border-top-color:var(--m2);}
+.sc-head{
+  padding:16px 20px;display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--b1);background:var(--s3);
+}
+.sc-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--m1),var(--m2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;}
+.sc-title{font-size:14px;font-weight:600;color:var(--white);}
+.sc-verdict{font-size:11px;font-family:var(--mono);color:var(--soft);flex:1;}
+.sc-score{font-size:28px;font-family:var(--mono);font-weight:700;line-height:1;}
+.sc-body{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sc-cors{display:flex;flex-direction:column;gap:8px;}
+.sc-cor{background:var(--s3);border:1px solid var(--b1);border-radius:6px;padding:10px 12px;}
+.sc-cor-title{font-size:10px;font-family:var(--mono);color:var(--white);margin-bottom:3px;display:flex;align-items:center;gap:6px;}
+.sc-cor-desc{font-size:9px;font-family:var(--mono);color:var(--soft);line-height:1.5;margin-bottom:4px;}
+.sc-cor-act{font-size:9px;font-family:var(--mono);color:var(--m1);}
+.sc-actions{display:flex;flex-direction:column;gap:6px;}
+.sc-action{
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--s3);border:1px solid var(--b1);border-radius:6px;
+  padding:8px 12px;font-size:10px;font-family:var(--mono);color:var(--body);line-height:1.55;
+}
+.sc-action-num{color:var(--m1);flex-shrink:0;font-weight:700;}
+.sc-empty{padding:24px;text-align:center;font-size:10px;font-family:var(--mono);color:var(--muted);line-height:1.8;}
+
+/* ── MODULE OVERLAY ── */
+.module-overlay{
+  position:fixed;top:52px;left:0;right:0;bottom:0;z-index:100;
+  background:var(--bg);
+  transform:translateY(100%);opacity:0;
+  transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s;
+  pointer-events:none;display:flex;flex-direction:column;
+}
+.module-overlay.open{transform:translateY(0);opacity:1;pointer-events:all;}
+.mo-bar{
+  height:44px;display:flex;align-items:center;gap:12px;
+  padding:0 20px;border-bottom:1px solid var(--b1);
+  background:var(--s1);flex-shrink:0;
+}
+.mo-back{
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;font-family:var(--mono);color:var(--soft);
+  background:none;border:none;cursor:pointer;transition:color .12s;
+}
+.mo-back:hover{color:var(--bright);}
+.mo-title{font-size:11px;font-weight:600;color:var(--white);}
+.mo-accent{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.mo-state-pill{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  background:var(--s3);border:1px solid var(--b1);border-radius:4px;
+  padding:4px 10px;font-size:9px;font-family:var(--mono);color:var(--soft);
+  max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mo-body{flex:1;overflow-y:auto;padding:24px 32px;}
+.mo-body::-webkit-scrollbar{width:5px;}
+.mo-body::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+
+/* module detail content */
+.engine-block{background:var(--s2);border:1px solid var(--b1);border-radius:10px;margin-bottom:14px;overflow:hidden;}
+.eb-head{
+  padding:12px 16px;background:var(--s3);border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;gap:10px;
+}
+.eb-name{font-size:10px;font-family:var(--mono);font-weight:500;color:var(--white);text-transform:uppercase;letter-spacing:.07em;flex:1;}
+.eb-score{font-size:16px;font-family:var(--mono);font-weight:700;}
+.eb-summary{font-size:10px;font-family:var(--mono);color:var(--soft);padding:10px 16px;border-bottom:1px solid var(--b1);}
+.finding-row{
+  display:flex;gap:0;padding:0;
+  border-bottom:1px solid var(--b0,var(--bg));
+  transition:background .12s;cursor:default;
+}
+.finding-row:last-child{border-bottom:none;}
+.finding-row:hover{background:var(--s3);}
+.fr-bar{width:3px;flex-shrink:0;}
+.fr-body{padding:10px 14px;flex:1;}
+.fr-title{font-size:11px;font-family:var(--mono);color:var(--bright);margin-bottom:3px;}
+.fr-desc{font-size:10px;font-family:var(--mono);color:var(--soft);line-height:1.6;}
+.fr-sugg{font-size:9px;font-family:var(--mono);color:var(--m1);margin-top:5px;display:flex;gap:5px;}
+.fr-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.fr-tag{font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:var(--s4);border:1px solid var(--b1);color:var(--muted);}
+
+/* config modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--s2);border:1px solid var(--b2);border-radius:12px;width:min(460px,94vw);overflow:hidden;}
+.m-hd{padding:18px 22px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;}
+.m-hd h3{font-size:13px;font-weight:700;color:var(--white);flex:1;}
+.mclose{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;}
+.mclose:hover{color:var(--bright);}
+.m-bd{padding:18px 22px;display:flex;flex-direction:column;gap:12px;}
+.m-ft{padding:14px 22px;border-top:1px solid var(--b1);display:flex;gap:8px;justify-content:flex-end;}
+.f-field{display:flex;flex-direction:column;gap:5px;}
+.f-lbl{font-size:9px;font-family:var(--mono);color:var(--soft);}
+.f-inp,.f-sel{background:var(--s3);border:1px solid var(--b2);border-radius:6px;color:var(--bright);font-family:var(--mono);font-size:11px;padding:9px 12px;outline:none;transition:border-color .2s;width:100%;}
+.f-inp:focus,.f-sel:focus{border-color:var(--m1);}
+.f-inp::placeholder{color:var(--muted);}
+.f-sel option{background:var(--s3);}
+.f-hint{font-size:8px;font-family:var(--mono);color:var(--muted);line-height:1.6;}
+.btn-save{padding:8px 18px;border-radius:5px;background:var(--m1);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;border:none;cursor:pointer;}
+.btn-save:hover{opacity:.87;}
+.btn-cancel{padding:8px 14px;border-radius:5px;background:transparent;border:1px solid var(--b2);color:var(--soft);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;}
+.btn-cancel:hover{background:var(--s3);color:var(--bright);}
+
+/* toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--s3);border:1px solid var(--b2);border-radius:7px;padding:10px 18px;font-size:11px;font-family:var(--mono);color:var(--white);display:flex;align-items:center;gap:8px;z-index:999;transition:all .3s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.tdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ── HISTORY DRAWER ── */
+.hist-drawer{
+  position:fixed;top:52px;right:0;bottom:0;
+  width:min(420px,95vw);
+  background:var(--s1);border-left:1px solid var(--b1);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  z-index:300;
+  box-shadow:-8px 0 32px rgba(0,0,0,.4);
+}
+.hist-drawer.open{transform:translateX(0);}
+.hd-top{padding:16px 18px 12px;border-bottom:1px solid var(--b1);flex-shrink:0;}
+.hd-title-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.hd-title{font-size:13px;font-weight:700;color:var(--white);}
+.hd-count{font-size:9px;font-family:var(--mono);color:var(--muted);background:var(--s3);border:1px solid var(--b1);border-radius:3px;padding:2px 8px;}
+.hd-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;}
+.hd-close:hover{color:var(--bright);}
+.hd-search-wrap{position:relative;}
+.hd-search{width:100%;background:var(--s3);border:1px solid var(--b1);border-radius:6px;color:var(--bright);font-family:var(--mono);font-size:11px;padding:8px 32px 8px 30px;outline:none;transition:border-color .2s;}
+.hd-search:focus{border-color:var(--m1);}
+.hd-search::placeholder{color:var(--muted);}
+.hd-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px;pointer-events:none;}
+.hd-search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;display:none;}
+.hd-search-clear.show{display:block;}
+.hd-search-clear:hover{color:var(--err);}
+.hd-list{flex:1;overflow-y:auto;padding:8px 12px;}
+.hd-list::-webkit-scrollbar{width:4px;}
+.hd-list::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.hist-item{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;}
+.hist-item:hover{background:var(--s3);border-color:var(--b2);}
+.hist-item.active{border-left-color:var(--m1);background:var(--s3);}
+.hi-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.hi-score{font-size:16px;font-family:var(--mono);font-weight:700;min-width:34px;text-align:center;flex-shrink:0;}
+.hi-meta{flex:1;min-width:0;}
+.hi-title{font-size:11px;font-family:var(--mono);color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px;}
+.hi-date{font-size:8px;font-family:var(--mono);color:var(--muted);}
+.hi-risk{font-size:8px;font-family:var(--mono);padding:2px 7px;border-radius:3px;flex-shrink:0;font-weight:500;}
+.hi-req{font-size:10px;font-family:var(--mono);color:var(--soft);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:4px;}
+.hi-req mark{background:rgba(79,143,255,.22);color:var(--white);border-radius:2px;padding:0 2px;}
+.hi-footer{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+.hi-tag{font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:var(--s4);border:1px solid var(--b1);color:var(--muted);}
+.hi-time{font-size:8px;font-family:var(--mono);color:var(--muted);margin-left:auto;}
+.hd-empty{padding:40px 20px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--muted);line-height:1.8;}
+.hd-loading{padding:24px;text-align:center;font-size:10px;font-family:var(--mono);color:var(--muted);}
+.hd-footer{padding:12px 16px;border-top:1px solid var(--b1);flex-shrink:0;}
+.hd-refresh-btn{width:100%;padding:7px;border-radius:5px;background:var(--s3);border:1px solid var(--b1);color:var(--soft);font-family:var(--font);font-size:11px;cursor:pointer;transition:all .15s;}
+.hd-refresh-btn:hover{background:var(--s4);color:var(--bright);}
+.hist-backdrop{display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.35);}
+.hist-backdrop.open{display:block;}
+
+/* ── VERSION DIALOG ── */
+.ver-dialog{
+  display:none;position:fixed;
+  top:50%;left:50%;transform:translate(-50%,-54%);
+  background:var(--s2);border:1px solid var(--b2);border-radius:12px;
+  width:min(440px,94vw);z-index:600;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+  animation:vdIn .2s ease;
+}
+@keyframes vdIn{from{opacity:0;transform:translate(-50%,-56%)}to{opacity:1;transform:translate(-50%,-54%)}}
+.ver-dialog.open{display:block;}
+.vd-hd{padding:18px 22px 14px;border-bottom:1px solid var(--b1);}
+.vd-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.vd-sub{font-size:10px;font-family:var(--mono);color:var(--muted);}
+.vd-body{padding:16px 22px;display:flex;flex-direction:column;gap:10px;}
+.vd-story-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--m1);color:#fff;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:4px 12px;border-radius:20px;
+}
+.vd-info{
+  background:var(--s3);border:1px solid var(--b1);border-radius:8px;
+  padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+}
+.vd-info-item{display:flex;flex-direction:column;gap:2px;}
+.vd-info-label{font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.vd-info-val{font-size:13px;font-family:var(--mono);font-weight:700;color:var(--white);}
+.vd-change{
+  background:var(--s3);border:1px solid var(--b1);border-radius:6px;
+  padding:8px 12px;font-size:10px;font-family:var(--mono);
+  display:flex;align-items:center;gap:8px;
+}
+.vd-change-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.vd-ft{padding:14px 22px;border-top:1px solid var(--b1);display:flex;gap:8px;}
+.vd-btn{
+  flex:1;padding:10px;border-radius:6px;
+  font-family:var(--font);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;border:none;
+}
+.vd-btn-new{background:var(--m1);color:#fff;}
+.vd-btn-new:hover{opacity:.87;}
+.vd-btn-view{background:var(--s3);border:1px solid var(--b2);color:var(--soft);}
+.vd-btn-view:hover{background:var(--s4);color:var(--bright);}
+.vd-btn-skip{background:transparent;border:1px solid var(--b1);color:var(--muted);flex:0;padding:10px 14px;}
+.vd-btn-skip:hover{color:var(--soft);}
+.ver-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:599;}
+.ver-overlay.open{display:block;}
+
+/* WCAG 2.4.7 focus visible */
+:focus-visible{outline:2px solid var(--m1);outline-offset:3px;border-radius:3px;}
+:focus:not(:focus-visible){outline:none;}
+/* Screen reader only */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .hub-grid{grid-template-columns:1fr 1fr;padding:16px 12px;}
+  .hub-hero{gap:12px;}
+  .hub-title{font-size:22px;}
+  .hub-sub{font-size:10px;}
+  .pipeline-vis{padding:10px 12px;gap:0;overflow-x:auto;}
+  .pipe-node{padding:6px 8px;min-width:60px;}
+  .pipe-label{font-size:7px;}
+  .flow-bar{padding:8px 12px;overflow-x:auto;}
+  .flow-step{padding:4px 10px;}
+  .flow-label{font-size:7px;}
+  .module-cards{grid-template-columns:1fr 1fr;}
+  .synth-card .sc-body{grid-template-columns:1fr;}
+  .topbar{padding:0 12px;}
+  .tb-name{font-size:11px;}
+  .tb-version{display:none;}
+  .ts-req{max-width:160px;}
+  .hist-drawer{width:100%;}
+  .mo-body{padding:16px 14px;}
+  .rp-engines{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:480px){
+  .hub-grid{grid-template-columns:1fr;}
+  .module-cards{grid-template-columns:1fr;}
+  .rp-engines{grid-template-columns:repeat(2,1fr);}
+  .sc-body{grid-template-columns:1fr!important;}
+  .flow-bar{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<a class="skip-link" href="#main-hub" style="position:fixed;top:-100px;left:16px;z-index:9999;background:var(--m1);color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;transition:top .15s;text-decoration:none;" onfocus="this.style.top='16px'" onblur="this.style.top='-100px'">Pular para conteúdo principal</a>
+<div class="topbar" role="banner">
+  <div class="tb-logo">
+    <div class="logo-glyph">QA</div>
+    <div>
+      <div class="tb-name">QA Intelligence System</div>
+      <div class="tb-version">v1.0 · hub central</div>
+    </div>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-state">
+    <span class="ts-label">requisito:</span>
+    <div class="ts-req empty" id="ts-req" onclick="focusInput()">nenhum ainda — cole abaixo</div>
+    <button class="ts-clear" id="ts-clear" onclick="clearState()" style="display:none" title="Limpar">✕</button>
+    <a id="ts-manage" href="story.html" target="_self" style="display:none;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);color:var(--m1);text-decoration:none;padding:3px 9px;border:1px solid rgba(79,143,255,.3);border-radius:3px;background:rgba(79,143,255,.08);white-space:nowrap;margin-left:4px" aria-label="Gerenciar história">↗</a>
+  </div>
+  <div class="tb-right">
+    <div class="tb-status">
+      <div class="status-led" id="status-led"></div>
+      <span id="status-txt">pronto</span>
+    </div>
+    <button class="hbtn hbtn-ghost" id="hist-btn" onclick="openHistory()" style="position:relative">⏱ Histórico<span id="hist-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:var(--m1);border-radius:50%;font-size:7px;font-family:var(--mono);color:#fff;display:flex;align-items:center;justify-content:center" id="hist-badge"></span></button>
+    <button class="hbtn hbtn-ghost" onclick="openConfig()">⚙ Config</button>
+  </div>
+</div>
+
+<!-- HUB -->
+<div class="hub" id="hub" role="main" aria-label="Hub de análise">
+  <div class="hub-grid">
+
+    <!-- hero -->
+    <div class="hub-hero">
+      <div>
+        <div class="hub-title">QA <em>Intelligence</em> Hub</div>
+        <div class="hub-sub">Cole o requisito, clique em Analisar. O pipeline processa tudo e alimenta cada módulo automaticamente.</div>
+      </div>
+      <div class="req-input-wrap">
+        <div class="rw-label">Requisito / User Story <span id="rw-chars">0 chars</span></div>
+        <textarea class="rw-ta" id="main-input" rows="4"
+          placeholder="Ex: O sistema deve permitir login com email e senha. Após 3 tentativas incorretas a conta é bloqueada por 15 minutos..."
+          oninput="onInput()"></textarea>
+        <div class="rw-footer">
+          <span class="rw-hint">⌘ Enter para analisar · resultado propaga para todos os módulos</span>
+          <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()" disabled>⚡ Analisar Pipeline</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- pipeline flow bar -->
+    <div class="flow-bar">
+      <div class="flow-step" id="fs-norm">
+        <div class="flow-dot" style="background:var(--body)">N</div>
+        <div class="flow-label">Normalizer</div>
+        <div class="flow-score" id="fsc-norm"></div>
+      </div>
+      <div class="flow-step" id="fs-amb">
+        <div class="flow-dot" style="background:var(--m1)">A</div>
+        <div class="flow-label">Ambiguidade</div>
+        <div class="flow-score" id="fsc-amb"></div>
+      </div>
+      <div class="flow-step" id="fs-risk">
+        <div class="flow-dot" style="background:var(--m4)">R</div>
+        <div class="flow-label">Risco</div>
+        <div class="flow-score" id="fsc-risk"></div>
+      </div>
+      <div class="flow-step" id="fs-rules">
+        <div class="flow-dot" style="background:var(--m2)">RN</div>
+        <div class="flow-label">Regras</div>
+        <div class="flow-score" id="fsc-rules"></div>
+      </div>
+      <div class="flow-step" id="fs-gap">
+        <div class="flow-dot" style="background:var(--m3)">G</div>
+        <div class="flow-label">Gaps</div>
+        <div class="flow-score" id="fsc-gap"></div>
+      </div>
+      <div class="flow-step" id="fs-cov">
+        <div class="flow-dot" style="background:var(--ok)">C</div>
+        <div class="flow-label">Cobertura</div>
+        <div class="flow-score" id="fsc-cov"></div>
+      </div>
+      <div class="flow-step" id="fs-synth">
+        <div class="flow-dot" style="background:linear-gradient(135deg,var(--m1),var(--m2))">S</div>
+        <div class="flow-label">Síntese</div>
+        <div class="flow-score" id="fsc-synth"></div>
+      </div>
+    </div>
+
+    <!-- module cards 1-5 -->
+    <div class="mod-card" id="card-m1" style="--accent:var(--m1)" onclick="openModule(1)">
+      <div class="mc-head">
+        <div class="mc-num" style="background:var(--m1)">01</div>
+        <div class="mc-info">
+          <div class="mc-name">QA Reasoning Engine</div>
+          <div class="mc-sub">ambiguidades · riscos · regras de negócio</div>
+        </div>
+        <div class="mc-score" id="score-m1" style="color:var(--muted)">—</div>
+      </div>
+      <div class="mc-body">
+        <div id="preview-m1">
+          <div class="mc-empty">Analise um requisito para ver ambiguidades, riscos e regras identificados pelo motor de raciocínio.</div>
+        </div>
+      </div>
+      <div class="mc-open-btn">→ Abrir módulo completo</div>
+    </div>
+
+    <div class="mod-card" id="card-m2" style="--accent:var(--m2)" onclick="openModule(2)">
+      <div class="mc-head">
+        <div class="mc-num" style="background:var(--m2)">02</div>
+        <div class="mc-info">
+          <div class="mc-name">Knowledge Layer</div>
+          <div class="mc-sub">memória corporativa · glossário · compliance</div>
+        </div>
+        <div class="mc-score" id="score-m2" style="color:var(--muted)">—</div>
+      </div>
+      <div class="mc-body">
+        <div id="preview-m2">
+          <div class="mc-empty">Base de conhecimento corporativa. Padrões, bugs históricos, heurísticas e regras enriquecem a análise.</div>
+        </div>
+      </div>
+      <div class="mc-open-btn">→ Abrir módulo completo</div>
+    </div>
+
+    <div class="mod-card" id="card-m3" style="--accent:var(--m3)" onclick="openModule(3)">
+      <div class="mc-head">
+        <div class="mc-num" style="background:var(--m3)">03</div>
+        <div class="mc-info">
+          <div class="mc-name">Traceability Engine</div>
+          <div class="mc-sub">RTM · rastreabilidade · auditoria</div>
+        </div>
+        <div class="mc-score" id="score-m3" style="color:var(--muted)">—</div>
+      </div>
+      <div class="mc-body">
+        <div id="preview-m3">
+          <div class="mc-empty">Matriz de rastreabilidade gerada automaticamente. Vínculos entre requisitos, regras, cenários e evidências.</div>
+        </div>
+      </div>
+      <div class="mc-open-btn">→ Abrir módulo completo</div>
+    </div>
+
+    <div class="mod-card" id="card-m4" style="--accent:var(--m4)" onclick="openModule(4)">
+      <div class="mc-head">
+        <div class="mc-num" style="background:var(--m4)">04</div>
+        <div class="mc-info">
+          <div class="mc-name">Coverage Validation</div>
+          <div class="mc-sub">gaps · inconsistências · score de cobertura</div>
+        </div>
+        <div class="mc-score" id="score-m4" style="color:var(--muted)">—</div>
+      </div>
+      <div class="mc-body">
+        <div id="preview-m4">
+          <div class="mc-empty">Revisor automático de cobertura. Cenários faltando, redundâncias e inconsistências detectados.</div>
+        </div>
+      </div>
+      <div class="mc-open-btn">→ Abrir módulo completo</div>
+    </div>
+
+    <div class="mod-card" id="card-m5" style="--accent:var(--m5)" onclick="openModule(5)">
+      <div class="mc-head">
+        <div class="mc-num" style="background:var(--m5)">05</div>
+        <div class="mc-info">
+          <div class="mc-name">Artifact Generation</div>
+          <div class="mc-sub">Robot Framework · Gherkin · Jira · Xray</div>
+        </div>
+        <div class="mc-score" id="score-m5" style="color:var(--muted)">—</div>
+      </div>
+      <div class="mc-body">
+        <div id="preview-m5">
+          <div class="mc-empty">Gera artefatos prontos para uso: .robot, .feature, Xray JSON, Jira tickets, relatórios HTML.</div>
+        </div>
+      </div>
+      <div class="mc-open-btn">→ Abrir módulo completo</div>
+    </div>
+
+    <!-- synthesis card full width -->
+    <div class="synth-card" id="card-synth">
+      <div class="sc-head">
+        <div class="sc-icon">∑</div>
+        <div>
+          <div class="sc-title">Synthesis Engine</div>
+          <div class="sc-verdict" id="synth-verdict">Execute uma análise para ver as correlações cross-engine.</div>
+        </div>
+        <div class="sc-score" id="synth-score" style="color:var(--muted)">—</div>
+      </div>
+      <div id="synth-body">
+        <div class="sc-empty">O Synthesis Engine cruza os resultados de todos os engines e encontra insights que nenhum engine sozinho produziria.<br><br>Ambiguidades que causam riscos · Gaps que amplificam vulnerabilidades · Regras que contradizem cenários</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODULE OVERLAY (slides up over hub) -->
+<div class="module-overlay" id="module-overlay">
+  <div class="mo-bar">
+    <button class="mo-back" onclick="closeModule()">← Hub</button>
+    <div class="mo-accent" id="mo-accent"></div>
+    <div class="mo-title" id="mo-title">Módulo</div>
+    <div class="mo-state-pill" id="mo-state-pill"></div>
+  </div>
+  <div class="mo-body" id="mo-body"></div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="overlay" id="config-overlay" onclick="if(event.target===this)closeConfig()">
+  <div class="modal" onclick="e=>e.stopPropagation()">
+    <div class="m-hd">
+      <h3>⚙ Backend Config</h3>
+      <button class="mclose" onclick="closeConfig()">×</button>
+    </div>
+    <div class="m-bd">
+      <div class="f-field">
+        <label class="f-lbl">Backend URL</label>
+        <input id="cfg-url" class="f-inp" type="text" placeholder="http://localhost:8000">
+        <div class="f-hint">FastAPI backend. Em produção: https://seu-dominio.com</div>
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Modo</label>
+        <select id="cfg-mode" class="f-sel" onchange="onModeChange()">
+          <option value="backend">Backend real (FastAPI)</option>
+          <option value="direct">Direto (Anthropic — dev only)</option>
+        </select>
+      </div>
+      <div id="key-wrap" style="display:none">
+        <div class="f-field">
+          <label class="f-lbl">Anthropic API Key</label>
+          <input id="cfg-key" class="f-inp" type="password" placeholder="sk-ant-...">
+          <div class="f-hint">Modo dev sem backend. Não use em produção.</div>
+        </div>
+      </div>
+    </div>
+    <div class="m-ft">
+      <button class="btn-cancel" onclick="closeConfig()">Cancelar</button>
+      <button class="btn-save" onclick="saveConfig()">✓ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="tdot" id="tdot"></div><span id="tmsg"></span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════════════════════════
+let config = { backendUrl:'http://localhost:8000', mode:'backend', directKey:'' };
+let state  = { requirement:'', lastResult:null };
+
+const SEV_COLOR = {critical:'#ff5252',high:'#ffab40',medium:'#4f8fff',low:'#4caf8a',info:'#9b6fff'};
+const scoreColor = s => s>=75?'var(--ok)':s>=50?'var(--warn)':'var(--err)';
+
+function loadStorage(){
+  try{ Object.assign(config, JSON.parse(localStorage.getItem('qa_cfg')||'{}')); }catch(e){}
+  try{ Object.assign(state, JSON.parse(localStorage.getItem('qa_state')||'{}')); }catch(e){}
+}
+function saveCfg(){ localStorage.setItem('qa_cfg', JSON.stringify(config)); }
+function saveState(){ localStorage.setItem('qa_state', JSON.stringify(state)); }
+
+// ══════════════════════════════════════════════════════════════
+// INPUT
+// ══════════════════════════════════════════════════════════════
+function onInput(){
+  const v = document.getElementById('main-input').value.trim();
+  document.getElementById('rw-chars').textContent = v.length+' chars';
+  document.getElementById('analyze-btn').disabled = v.length < 5;
+}
+function focusInput(){ document.getElementById('main-input').focus(); }
+
+// ══════════════════════════════════════════════════════════════
+// ANALYSIS
+// ══════════════════════════════════════════════════════════════
+async function runAnalysis(forceSkipVersionCheck){
+  if (!forceSkipVersionCheck) {
+    const proceed = await checkVersionBeforeAnalysis();
+    if (!proceed) return;
+  }
+  const req = document.getElementById('main-input').value.trim();
+  if(!req || req.length < 5) return;
+
+  state.requirement = req;
+  saveState();
+  updateTopbarReq();
+  setStatus('run','analisando...');
+  document.getElementById('analyze-btn').disabled = true;
+
+  // animate flow steps
+  ['norm','amb','risk','rules','gap','cov','synth'].forEach(s=>{
+    document.getElementById('fs-'+s)?.classList.remove('done','run');
+  });
+  stepRun('norm');
+
+  try{
+    const result = config.mode === 'direct' ? await callDirect(req) : await callBackend(req);
+    state.lastResult = result;
+    saveState();
+    renderAll(result);
+    setStatus('ok','análise concluída');
+    toast('Pipeline completo ✓','var(--ok)');
+  }catch(e){
+    setStatus('err','erro: '+e.message);
+    toast(e.message,'var(--err)');
+  }
+  document.getElementById('analyze-btn').disabled = false;
+}
+
+async function callBackend(req){
+  const url = config.backendUrl.replace(/\/$/,'')+'/api/v1/analyze';
+  const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requirement:req})});
+  if(!r.ok) throw new Error('Backend '+r.status);
+  return r.json();
+}
+
+async function callDirect(req){
+  if(!config.directKey) throw new Error('Configure a API Key no modo direto');
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':config.directKey,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:buildDirectPrompt(req)}]})
+  });
+  if(!r.ok) throw new Error('Anthropic '+r.status);
+  const d = await r.json();
+  const raw = d.content?.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(raw);
+}
+
+function buildDirectPrompt(req){
+  return `You are a QA analysis pipeline. Return ONLY valid JSON for this requirement: "${req.replace(/"/g,"'")}"
+
+{"request_id":"d1","status":"done","normalized":{"original":"${req.slice(0,80).replace(/"/g,"'")}","normalized":"Cleaned version","intent":"Core intent","actors":["User","System"],"actions":["login","validate"],"conditions":["valid credentials"],"constraints":["max 3 attempts"],"keywords":["auth","login","security"],"complexity":"medium"},"ambiguity":{"engine":"ambiguity","status":"done","findings":[{"id":"AMB-001","engine":"ambiguity","severity":"high","title":"Undefined lockout duration","description":"The requirement does not specify how long the account remains locked after 3 failed attempts.","suggestion":"Define lockout duration explicitly, e.g., 15 minutes.","refs":[],"tags":["missing-quantifier"]},{"id":"AMB-002","engine":"ambiguity","severity":"medium","title":"Email format validation not specified","description":"No validation rules defined for the email field format.","suggestion":"Specify RFC 5322 compliance or custom validation rules.","refs":[],"tags":["vague-term"]}],"score":55,"summary":"Two significant ambiguities found that could lead to inconsistent test scenarios."},"risk":{"engine":"risk","status":"done","findings":[{"id":"RSK-001","engine":"risk","severity":"critical","title":"Brute force vulnerability","description":"No rate limiting beyond the 3-attempt rule. Attackers could use distributed attacks.","suggestion":"Implement IP-based rate limiting and CAPTCHA after lockout.","refs":[],"tags":["security"]},{"id":"RSK-002","engine":"risk","severity":"high","title":"Session fixation risk","description":"Login flow does not specify session token regeneration after successful auth.","suggestion":"Ensure session ID is regenerated on login success.","refs":[],"tags":["security"]}],"score":40,"summary":"Critical security risks identified in authentication flow.","risk_level":"critical"},"rules":{"engine":"rules","status":"done","findings":[{"id":"RUL-001","engine":"rules","severity":"medium","title":"Implicit password policy missing","description":"No password complexity rules are stated, making validation tests undefined.","suggestion":"Add explicit password policy: min length, character requirements.","refs":[],"tags":["missing"]}],"score":65,"summary":"One implicit rule gap found.","rules_found":["Account locks after 3 failed attempts","User authenticates with email and password"]},"gap":{"engine":"gap","status":"done","findings":[{"id":"GAP-001","engine":"gap","severity":"high","title":"Missing: account unlock flow","description":"No scenario described for how a locked account is unlocked (time-based, admin, email link).","suggestion":"Add requirement: locked account unlocks after 15 min or via email link.","refs":[],"tags":["scenario"]},{"id":"GAP-002","engine":"gap","severity":"high","title":"Missing: concurrent session handling","description":"Behavior for simultaneous logins from multiple devices not specified.","suggestion":"Define max concurrent sessions policy.","refs":[],"tags":["concurrency"]}],"score":45,"summary":"Two high-severity gaps found in the login requirement.","missing":["Account unlock mechanism","Concurrent session policy","Remember me functionality","Password reset flow"]},"coverage":{"engine":"coverage","status":"done","findings":[{"id":"COV-001","engine":"coverage","severity":"high","title":"Security test coverage undefined","description":"No security testing scenarios are defined for the authentication flow.","suggestion":"Add penetration testing scenarios for SQL injection, XSS, and brute force.","refs":[],"tags":["security"]}],"score":50,"summary":"Coverage adequate for happy path but insufficient for security scenarios.","covered":["Happy path login","Invalid password scenario","Account lockout trigger"],"uncovered":["SQL injection in credentials","Session management","Concurrent logins","Password reset"]},"synthesis":{"engine":"synthesis","overall_score":48,"verdict":"Requirement has critical security gaps and missing behavioral specifications — not ready for test development.","correlations":[{"id":"COR-001","engines":["ambiguity","risk"],"severity":"critical","title":"Undefined lockout duration amplifies brute force risk","description":"The ambiguous lockout duration combined with the brute force risk means testers cannot validate the security control effectively. An undefined duration could be exploited.","action":"Define explicit lockout duration (15 min recommended) and add rate limiting requirement before test development begins."},{"id":"COR-002","engines":["gap","coverage"],"severity":"high","title":"Missing unlock flow creates coverage void","description":"Without an account unlock mechanism defined, both the gap and coverage engines identify a full scenario category that cannot be tested.","action":"Add account unlock requirement (time-based + email link) to enable complete security flow testing."}],"top_actions":["Define lockout duration explicitly (15 minutes recommended)","Add IP-based rate limiting requirement","Specify account unlock mechanism","Add concurrent session handling policy","Define password complexity requirements"],"summary":"The login requirement covers the basic happy path but has critical gaps in security specifications. Two cross-engine correlations identified that create compounded risks for test coverage."},"timings":{"total":3.2}}`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════════════
+function renderAll(r){
+  if(!r) return;
+
+  // Flow steps
+  stepDone('norm', r.normalized ? '✓' : null);
+  if(r.ambiguity)  stepDone('amb',  r.ambiguity.score);
+  if(r.risk)       stepDone('risk', r.risk.score);
+  if(r.rules)      stepDone('rules',r.rules.score);
+  if(r.gap)        stepDone('gap',  r.gap.score);
+  if(r.coverage)   stepDone('cov',  r.coverage.score);
+  if(r.synthesis)  stepDone('synth',r.synthesis.overall_score);
+
+  // Module cards preview
+  renderCard1(r);
+  renderCard4(r);
+  renderCard2(r);
+  renderCard3(r);
+  renderCard5(r);
+
+  // Synthesis
+  renderSynthesis(r.synthesis);
+}
+
+function stepRun(key){ document.getElementById('fs-'+key)?.classList.add('run'); }
+function stepDone(key, score){
+  const el = document.getElementById('fs-'+key);
+  el?.classList.remove('run'); el?.classList.add('done');
+  const sc = document.getElementById('fsc-'+key);
+  if(sc && score !== null && score !== undefined){
+    sc.textContent = typeof score === 'number' ? score : score;
+    sc.style.color = typeof score === 'number' ? scoreColor(score) : 'var(--ok)';
+  }
+}
+
+function renderCard1(r){
+  const engines = [r.ambiguity, r.risk, r.rules].filter(Boolean);
+  const allFindings = engines.flatMap(e=>e.findings||[]).slice(0,4);
+  const avgScore = engines.length ? Math.round(engines.reduce((s,e)=>s+e.score,0)/engines.length) : 0;
+  const el = document.getElementById('score-m1');
+  el.textContent = avgScore; el.style.color = scoreColor(avgScore);
+  document.getElementById('card-m1').classList.add('has-result');
+  document.getElementById('preview-m1').innerHTML = allFindings.map(f=>`
+    <div class="mc-finding">
+      <div class="mf-dot" style="background:${SEV_COLOR[f.severity]||'#999'}"></div>
+      <span>${f.title}</span>
+    </div>`).join('') + `<div class="mc-summary" style="margin-top:8px">${r.ambiguity?.summary||''}</div>`;
+}
+
+function renderCard2(r) {
+  const ka = r.knowledge || r.__dict__?.knowledge;
+  const card = document.getElementById('card-m2');
+  const preview = document.getElementById('preview-m2');
+  const scoreEl = document.getElementById('score-m2');
+
+  if (!ka) {
+    preview.innerHTML = '<div class="mc-empty">Análise sem dados de conhecimento corporativo.</div>';
+    return;
+  }
+
+  card.classList.add('has-result');
+
+  // Score: based on KB entries found
+  const kbCount = (ka.kb_entries || []).length;
+  const defTotal = ka.defects_summary?.total || 0;
+  const hasHistory = ka.has_history;
+
+  scoreEl.textContent = hasHistory ? 'v' + (ka.previous_versions?.length || 1) : 'novo';
+  scoreEl.style.color = hasHistory ? 'var(--warn)' : 'var(--ok)';
+
+  // Build preview
+  const lines = [];
+
+  if (hasHistory) {
+    const trend = {'improving':'📈 Melhorando','degrading':'📉 Regredindo','stable':'➡ Estável','first':'🆕 Primeira'};
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><span>${trend[ka.version_trend] || ka.version_trend} · ${ka.previous_versions?.length || 0} versão(ões)</span></div>`);
+  }
+
+  if (defTotal > 0) {
+    const openDef = ka.defects_summary?.open || 0;
+    const critDef = ka.defects_summary?.critical || 0;
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><span>${defTotal} defeito(s) · ${openDef} aberto(s)${critDef > 0 ? ' · ' + critDef + ' critical' : ''}</span></div>`);
+  }
+
+  if (kbCount > 0) {
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><span>${kbCount} entrada(s) do Knowledge Layer</span></div>`);
+  }
+
+  if (ka.recurring_risks?.length) {
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><span>${ka.recurring_risks[0]}</span></div>`);
+  }
+
+  if (ka.family?.parent_story) {
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--m3)"></div><span>Melhoria de ${ka.family.parent_story.parent_id}</span></div>`);
+  }
+
+  if (!lines.length) {
+    lines.push('<div class="mc-empty">Primeira análise — base de conhecimento sendo construída.</div>');
+  }
+
+  preview.innerHTML = lines.join('');
+}
+
+function renderCard3(r) {
+  const tra = r.traceability;
+  const card = document.getElementById('card-m3');
+  const preview = document.getElementById('preview-m3');
+  const scoreEl = document.getElementById('score-m3');
+  if (!tra) {
+    preview.innerHTML = '<div class="mc-empty">Execute uma análise para ver a RTM gerada automaticamente.</div>';
+    return;
+  }
+  card.classList.add('has-result');
+  const cov = tra.overall_coverage ?? 0;
+  scoreEl.textContent = cov + '%';
+  scoreEl.style.color = cov >= 75 ? 'var(--ok)' : cov >= 50 ? 'var(--warn)' : 'var(--err)';
+
+  const lines = [];
+  lines.push(`<div class="mc-summary">${tra.verdict || ''}</div>`);
+  (tra.items || []).slice(0,4).forEach(item => {
+    const dot = item.coverage === 'full' ? 'var(--ok)' : item.coverage === 'partial' ? 'var(--warn)' : 'var(--err)';
+    lines.push(`<div class="mc-finding">
+      <div class="mf-dot" style="background:${dot}"></div>
+      <span>${item.req_id} · ${item.coverage_pct}% · ${item.risks.length} risco(s) · ${item.gaps.length} gap(s)</span>
+    </div>`);
+  });
+  if (tra.uncovered?.length) {
+    lines.push(`<div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><span>${tra.uncovered.length} req. sem cobertura</span></div>`);
+  }
+  preview.innerHTML = lines.join('');
+}
+
+function renderCard4(r){
+  const engines = [r.gap, r.coverage].filter(Boolean);
+  const allFindings = engines.flatMap(e=>e.findings||[]).slice(0,4);
+  const avgScore = engines.length ? Math.round(engines.reduce((s,e)=>s+e.score,0)/engines.length) : 0;
+  const el = document.getElementById('score-m4');
+  el.textContent = avgScore; el.style.color = scoreColor(avgScore);
+  document.getElementById('card-m4').classList.add('has-result');
+  document.getElementById('preview-m4').innerHTML = allFindings.map(f=>`
+    <div class="mc-finding">
+      <div class="mf-dot" style="background:${SEV_COLOR[f.severity]||'#999'}"></div>
+      <span>${f.title}</span>
+    </div>`).join('') + `<div class="mc-summary" style="margin-top:8px">${r.gap?.summary||''}</div>`;
+}
+
+function renderCardGeneric(n, r, summary, items){
+  document.getElementById('card-m'+n).classList.add('has-result');
+  document.getElementById('preview-m'+n).innerHTML = `
+    <div class="mc-summary">${summary}</div>
+    ${items.map(i=>`<div class="mc-finding"><div class="mf-dot" style="background:var(--ok)"></div><span>${i}</span></div>`).join('')}`;
+}
+
+function renderCard5(r){
+  document.getElementById('card-m5').classList.add('has-result');
+  const formats = ['Robot Framework (.robot)','Gherkin (.feature)','Xray JSON','Jira tickets','HTML Report'];
+  document.getElementById('score-m5').textContent='↗';
+  document.getElementById('score-m5').style.color='var(--m5)';
+  document.getElementById('preview-m5').innerHTML = formats.map(f=>
+    `<div class="mc-finding"><div class="mf-dot" style="background:var(--m5)"></div><span>${f}</span></div>`
+  ).join('');
+}
+
+function renderSynthesis(s){
+  if(!s){ return; }
+  document.getElementById('card-synth').classList.add('has-result');
+  document.getElementById('synth-verdict').textContent = s.verdict||'';
+  const scoreEl = document.getElementById('synth-score');
+  scoreEl.textContent = s.overall_score;
+  scoreEl.style.color = scoreColor(s.overall_score);
+
+  const cors = (s.correlations||[]).slice(0,3);
+  const acts = (s.top_actions||[]).slice(0,5);
+
+  document.getElementById('synth-body').innerHTML = `
+    <div class="sc-body">
+      <div>
+        <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Correlações cross-engine</div>
+        <div class="sc-cors">
+          ${cors.length ? cors.map(c=>`
+            <div class="sc-cor">
+              <div class="sc-cor-title">
+                <div style="width:5px;height:5px;border-radius:50%;background:${SEV_COLOR[c.severity]||'#999'};flex-shrink:0"></div>
+                ${c.title}
+              </div>
+              <div class="sc-cor-desc">${c.description}</div>
+              <div class="sc-cor-act">→ ${c.action}</div>
+            </div>`).join('')
+          : '<div style="font-size:10px;font-family:var(--mono);color:var(--muted)">Nenhuma correlação encontrada</div>'}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Ações prioritárias</div>
+        <div class="sc-actions">
+          ${acts.map((a,i)=>`
+            <div class="sc-action">
+              <span class="sc-action-num">${i+1}.</span>${a}
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MODULE OVERLAY
+// ══════════════════════════════════════════════════════════════
+const MODULE_META = {
+  1:{name:'QA Reasoning Engine',   color:'var(--m1)', engines:['ambiguity','risk','rules']},
+  2:{name:'Knowledge Layer',        color:'var(--m2)', engines:[]},
+  3:{name:'Traceability Engine',    color:'var(--m3)', engines:[]},
+  4:{name:'Coverage Validation',    color:'var(--m4)', engines:['gap','coverage']},
+  5:{name:'Artifact Generation',    color:'var(--m5)', engines:[]},
+};
+
+const ENGINE_META = {
+  ambiguity:{name:'Ambiguidades',    color:'var(--m1)'},
+  risk:     {name:'Riscos',          color:'var(--m4)'},
+  rules:    {name:'Regras de Negócio',color:'var(--m2)'},
+  gap:      {name:'Gaps',            color:'var(--m3)'},
+  coverage: {name:'Cobertura',       color:'var(--ok)'},
+};
+
+function openModule(n){
+  const meta = MODULE_META[n];
+  const ov = document.getElementById('module-overlay');
+  document.getElementById('mo-accent').style.background = meta.color;
+  document.getElementById('mo-title').textContent = meta.name;
+  document.getElementById('hub').classList.add('hidden');
+
+  // state pill
+  const pill = document.getElementById('mo-state-pill');
+  if(state.requirement){
+    pill.textContent = '📋 ' + state.requirement.slice(0,60)+'...';
+  } else {
+    pill.textContent = 'Nenhum requisito analisado';
+  }
+
+  // build content
+  const body = document.getElementById('mo-body');
+  body.innerHTML = '';
+
+  if(!state.lastResult || !meta.engines.length){
+    body.innerHTML = buildModulePlaceholder(n, state.lastResult);
+  } else {
+    meta.engines.forEach(engKey=>{
+      const eng = state.lastResult[engKey];
+      if(!eng) return;
+      const m = ENGINE_META[engKey];
+      const block = document.createElement('div');
+      block.className = 'engine-block';
+      block.innerHTML = `
+        <div class="eb-head">
+          <div class="eb-name" style="color:${m.color}">${m.name}</div>
+          <div class="eb-score" style="color:${scoreColor(eng.score)}">${eng.score}</div>
+        </div>
+        <div class="eb-summary">${eng.summary||''}</div>
+        ${(eng.findings||[]).map(f=>`
+          <div class="finding-row">
+            <div class="fr-bar" style="background:${SEV_COLOR[f.severity]||'#999'}"></div>
+            <div class="fr-body">
+              <div class="fr-title">${f.title}</div>
+              <div class="fr-desc">${f.description}</div>
+              ${f.suggestion?`<div class="fr-sugg"><span>→</span>${f.suggestion}</div>`:''}
+              ${(f.tags||[]).length?`<div class="fr-tags">${f.tags.map(t=>`<span class="fr-tag">${t}</span>`).join('')}</div>`:''}
+            </div>
+          </div>`).join('')||`<div style="padding:10px 14px;font-size:10px;font-family:var(--mono);color:var(--muted)">Nenhum achado neste engine.</div>`}`;
+      body.appendChild(block);
+    });
+
+    // Extra content per module
+    if(n===1 && state.lastResult?.rules?.rules_found?.length){
+      const rb = document.createElement('div');
+      rb.className='engine-block';
+      rb.innerHTML=`<div class="eb-head"><div class="eb-name" style="color:var(--m2)">Regras Encontradas</div></div>
+        ${state.lastResult.rules.rules_found.map(r=>`
+          <div class="finding-row">
+            <div class="fr-bar" style="background:var(--m2)"></div>
+            <div class="fr-body"><div class="fr-title">${r}</div></div>
+          </div>`).join('')}`;
+      body.appendChild(rb);
+    }
+    if(n===4 && state.lastResult?.coverage){
+      const cov = state.lastResult.coverage;
+      if(cov.uncovered?.length || cov.covered?.length){
+        const cb = document.createElement('div');
+        cb.className='engine-block';
+        cb.innerHTML=`<div class="eb-head"><div class="eb-name" style="color:var(--ok)">Mapa de Cobertura</div></div>
+          ${(cov.uncovered||[]).map(u=>`<div class="finding-row"><div class="fr-bar" style="background:var(--err)"></div><div class="fr-body"><div class="fr-title" style="color:var(--err)">✗ ${u}</div></div></div>`).join('')}
+          ${(cov.covered||[]).map(u=>`<div class="finding-row"><div class="fr-bar" style="background:var(--ok)"></div><div class="fr-body"><div class="fr-title" style="color:var(--ok)">✓ ${u}</div></div></div>`).join('')}`;
+        body.appendChild(cb);
+      }
+    }
+    if(n===5) body.innerHTML = buildArtifactModule();
+  }
+
+  ov.classList.add('open');
+}
+
+function buildTraceabilityContent(result) {
+  const tra = result?.traceability;
+  if (!tra) return '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">Nenhum dado de rastreabilidade. Execute uma análise.</div>';
+
+  const covColor = s => s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--err)';
+  let html = '<div style="display:flex;flex-direction:column;gap:14px">';
+
+  // Executive summary
+  html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="font-size:28px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage)}">${tra.overall_coverage}%</div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--white)">${tra.verdict || 'Análise de rastreabilidade'}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px">${tra.summary || ''}</div>
+      </div>
+    </div>
+    ${tra.uncovered?.length ? `<div style="font-size:10px;font-family:var(--mono);color:var(--err)">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
+  </div>`;
+
+  // RTM Table
+  if (tra.items?.length) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m3);text-transform:uppercase;letter-spacing:.08em">
+        Matriz de Rastreabilidade (RTM)
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--b1)">
+              <th style="padding:8px 12px;text-align:left;color:var(--muted);font-weight:500;white-space:nowrap">Requisito</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Regras</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Critérios</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Cenários</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Riscos</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Gaps</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Cob.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tra.items.map(item => {
+              const dot = item.coverage === 'full' ? '#4caf8a' : item.coverage === 'partial' ? '#ffab40' : '#ff5252';
+              return `<tr style="border-bottom:1px solid var(--b1)">
+                <td style="padding:8px 12px;color:var(--bright);white-space:nowrap">
+                  <div style="font-weight:700;color:var(--m3)">${item.req_id}</div>
+                  <div style="color:var(--muted);font-size:9px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.req_title}</div>
+                </td>
+                <td style="padding:8px 12px;text-align:center;color:${item.rules.length ? 'var(--ok)' : 'var(--muted)'}">
+                  ${item.rules.length || '—'}
+                </td>
+                <td style="padding:8px 12px;text-align:center;color:${item.criteria.length ? 'var(--ok)' : 'var(--muted)'}">
+                  ${item.criteria.length || '—'}
+                </td>
+                <td style="padding:8px 12px;text-align:center;color:${item.scenarios.length ? 'var(--ok)' : 'var(--muted)'}">
+                  ${item.scenarios.length || '—'}
+                </td>
+                <td style="padding:8px 12px;text-align:center;color:${item.risks.length ? 'var(--err)' : 'var(--muted)'}">
+                  ${item.risks.length || '—'}
+                </td>
+                <td style="padding:8px 12px;text-align:center;color:${item.gaps.length ? 'var(--warn)' : 'var(--muted)'}">
+                  ${item.gaps.length || '—'}
+                </td>
+                <td style="padding:8px 12px;text-align:center">
+                  <span style="font-weight:700;color:${dot}">${item.coverage_pct}%</span>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+    // Detail per requirement
+    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
+    tra.items.forEach(item => {
+      if (!item.rules.length && !item.risks.length && !item.gaps.length) return;
+      html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:9px 14px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--mono);font-weight:700;color:var(--m3);font-size:11px">${item.req_id}</span>
+          <span style="font-size:10px;color:var(--soft)">${item.req_title}</span>
+        </div>
+        ${item.rules.map(r => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
+          <span style="color:var(--m2);flex-shrink:0">RN</span><span style="color:var(--bright)">${r}</span>
+        </div>`).join('')}
+        ${item.risks.map(r => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
+          <span style="color:var(--err);flex-shrink:0">RSK</span><span style="color:var(--bright)">${r}</span>
+        </div>`).join('')}
+        ${item.gaps.map(g => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
+          <span style="color:var(--warn);flex-shrink:0">GAP</span><span style="color:var(--bright)">${g}</span>
+        </div>`).join('')}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildKnowledgeModuleContent(result) {
+  const ka = result?.knowledge;
+  const n  = result?.normalized;
+  if (!ka) {
+    return '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">Nenhum dado de conhecimento disponível.</div>';
+  }
+
+  let html = '<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0">';
+
+  // Story identity
+  if (ka.story_id) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 16px">
+      <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">História identificada</div>
+      <div style="font-size:14px;font-family:var(--mono);font-weight:700;color:var(--m1)">${ka.story_id}</div>
+      ${ka.has_history ? `<div style="font-size:10px;font-family:var(--mono);color:var(--soft);margin-top:3px">${ka.previous_versions?.length || 0} versão(ões) analisada(s) · Tendência: ${ka.version_trend}</div>` : '<div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:3px">Primeira análise desta história</div>'}
+    </div>`;
+  }
+
+  // Version history
+  if (ka.has_history && ka.previous_versions?.length) {
+    const latest = ka.previous_versions[0];
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">Histórico de versões</div>
+      ${ka.previous_versions.slice(0,4).map(v => {
+        const sc = v.overall_score;
+        const scColor = sc != null ? (sc >= 75 ? 'var(--ok)' : sc >= 50 ? 'var(--warn)' : 'var(--err)') : 'var(--muted)';
+        return `<div style="padding:9px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
+          <span style="font-size:9px;font-family:var(--mono);color:var(--muted)">v${v.version}</span>
+          ${sc != null ? `<span style="font-size:13px;font-family:var(--mono);font-weight:700;color:${scColor}">${sc}</span>` : ''}
+          <span style="font-size:9px;font-family:var(--mono);color:var(--muted)">${v.risk_level || '—'}</span>
+          <span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:auto">${v.created_at ? new Date(v.created_at).toLocaleDateString('pt-BR') : ''}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // Defects
+  const d = ka.defects_summary;
+  if (d && d.total > 0) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--err);text-transform:uppercase;letter-spacing:.08em">Defeitos</span>
+        <span style="font-size:13px;font-family:var(--mono);font-weight:700;color:var(--err);margin-left:auto">${d.total}</span>
+      </div>
+      <div style="padding:10px 16px;display:flex;gap:14px;font-size:10px;font-family:var(--mono);flex-wrap:wrap">
+        <span style="color:var(--err)">Abertos: ${d.open || 0}</span>
+        <span style="color:var(--ok)">Corrigidos: ${d.fixed || 0}</span>
+        ${d.critical ? `<span style="color:var(--err)">Critical: ${d.critical}</span>` : ''}
+      </div>
+      ${(d.defects || []).slice(0,3).map(def => `<div style="padding:8px 16px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+        <span style="width:5px;height:5px;border-radius:50%;background:${def.severity==='critical'?'var(--err)':def.severity==='high'?'var(--warn)':'var(--m1)'};flex-shrink:0"></span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--bright)">${def.title}</span>
+        ${def.jira_id ? `<span style="font-size:8px;font-family:var(--mono);color:var(--m1);margin-left:auto">${def.jira_id}</span>` : ''}
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // KB entries
+  if (ka.kb_entries?.length) {
+    const catColor = {padrao:'var(--m1)',bug:'var(--err)',integ:'var(--m3)',gloss:'var(--m5)',comp:'var(--ok)',risco:'var(--err)',heur:'var(--m2)'};
+    const catLabel = {padrao:'Padrão',bug:'Bug Histórico',integ:'Integração',gloss:'Glossário',comp:'Compliance',risco:'Risco',heur:'Heurística'};
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">Conhecimento corporativo (${ka.kb_entries.length})</div>
+      ${ka.kb_entries.slice(0,5).map(e => `<div style="padding:10px 16px;border-bottom:1px solid var(--b1)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span style="font-size:8px;font-family:var(--mono);color:${catColor[e.category]||'var(--muted)'};text-transform:uppercase">${catLabel[e.category]||e.category}</span>
+          ${e.severity ? `<span style="font-size:8px;font-family:var(--mono);color:var(--muted)">${e.severity}</span>` : ''}
+        </div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--bright)">${e.title}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Keywords
+  if (n?.keywords?.length) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 16px">
+      <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Keywords identificados</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${n.keywords.map(k=>`<span style="font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:var(--s3);border:1px solid var(--b1);color:var(--soft)">${k}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildModulePlaceholder(n, result){
+  if(!result) return `<div style="text-align:center;padding:60px;font-family:var(--mono);font-size:12px;color:var(--muted)">
+    <div style="font-size:32px;margin-bottom:12px;color:var(--b3)">[ ]</div>
+    Analise um requisito no Hub para ver os resultados aqui.
+  </div>`;
+
+  // Module 2, 3, 5 have no direct engine output yet
+  const placeholders = {
+    2: buildKnowledgeModuleContent(result),
+    3: buildTraceabilityContent(result),
+    5: buildArtifactModule(),
+  };
+  return placeholders[n]||'';
+}
+
+function buildArtifactModule(){
+  const req = state.requirement||'';
+  const findings = state.lastResult ? [
+    ...(state.lastResult.ambiguity?.findings||[]),
+    ...(state.lastResult.risk?.findings||[]),
+    ...(state.lastResult.gap?.findings||[]),
+  ].slice(0,5) : [];
+
+  return `<div style="display:flex;flex-direction:column;gap:14px">
+    <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:12px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:10px;font-family:var(--mono);color:var(--m5)">ROBOT FRAMEWORK · .robot</div>
+      <pre style="padding:14px 16px;font-family:var(--mono);font-size:10px;color:var(--bright);line-height:1.7;white-space:pre-wrap">*** Settings ***
+Library           Browser
+Resource          keywords/common.resource
+Suite Setup       Open Browser And Login
+Suite Teardown    Close Browser
+
+*** Variables ***
+\${BASE_URL}       \${ENV:BASE_URL}
+\${VALID_USER}     \${ENV:TEST_USER}
+\${VALID_PASS}     \${ENV:TEST_PASS}
+
+*** Test Cases ***
+${findings.slice(0,3).map((f,i)=>`TC-${String(i+1).padStart(3,'0')} ${f.title}
+    [Tags]    smoke    regression
+    [Documentation]    ${f.description.slice(0,80)}
+    Given User Is On Login Page
+    When User Enters Credentials    \${VALID_USER}    \${VALID_PASS}
+    Then System Should Validate Correctly
+`).join('\n')}
+*** Keywords ***
+User Is On Login Page
+    Go To    \${BASE_URL}/login
+    Wait For Elements State    css=form    visible
+
+User Enters Credentials
+    [Arguments]    \${email}    \${password}
+    Fill Text    id=email    \${email}
+    Fill Text    id=password    \${password}
+    Click    css=button[type=submit]</pre>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:10px;font-family:var(--mono);color:var(--ok)">GHERKIN · .feature</div>
+        <pre style="padding:12px 14px;font-family:var(--mono);font-size:10px;color:var(--bright);line-height:1.65;white-space:pre-wrap">Feature: ${req.slice(0,40)||'Funcionalidade'}
+
+  Background:
+    Given o sistema está disponível
+    And o banco de dados está limpo
+
+  @smoke @regression
+  Scenario: Fluxo principal
+    Given que o usuário está na tela de login
+    When o usuário informa credenciais válidas
+    Then deve ser redirecionado com sucesso
+
+  @negative
+  Scenario Outline: Tentativas inválidas
+    Given que o usuário tenta login com <dados>
+    When o sistema processa a tentativa
+    Then deve exibir <mensagem>
+
+    Examples:
+      | dados          | mensagem         |
+      | senha errada   | Credenciais inv. |
+      | email inválido | Formato inválido |</pre>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:10px;font-family:var(--mono);color:var(--m1)">XRAY JSON · Jira import</div>
+        <pre style="padding:12px 14px;font-family:var(--mono);font-size:10px;color:var(--bright);line-height:1.65;white-space:pre-wrap">{
+  "tests": [${findings.slice(0,2).map((f,i)=>`
+    {
+      "testtype": "Manual",
+      "fields": {
+        "summary": "${f.title.slice(0,50)}",
+        "priority": {"name": "${f.severity==='critical'?'Critical':f.severity==='high'?'High':'Medium'}"},
+        "labels": ${JSON.stringify(f.tags||[]).slice(0,40)}
+      },
+      "steps": [
+        {"action": "Executar cenário",
+         "data": "Dados de teste",
+         "result": "${f.suggestion?.slice(0,60)||'Resultado esperado'}"}
+      ]
+    }`).join(',')}
+  ]
+}</pre>
+      </div>
+    </div>
+  </div>`;
+}
+
+function closeModule(){
+  document.getElementById('module-overlay').classList.remove('open');
+  document.getElementById('hub').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATE & TOPBAR
+// ══════════════════════════════════════════════════════════════
+function updateTopbarReq(){
+  const el = document.getElementById('ts-req');
+  const cl = document.getElementById('ts-clear');
+  if(state.requirement){
+    el.textContent = state.requirement.slice(0,80)+(state.requirement.length>80?'...':'');
+    el.classList.remove('empty');
+    cl.style.display='';
+    // Show "Gerenciar" link if story_id detected
+    const storyId = detectStoryIdFront(state.requirement);
+    const mgBtn = document.getElementById('ts-manage');
+    if(mgBtn){
+      if(storyId){
+        mgBtn.href = 'story.html?id=' + encodeURIComponent(storyId);
+        mgBtn.style.display='flex';
+        mgBtn.textContent = '↗ ' + storyId;
+      } else {
+        mgBtn.style.display='none';
+      }
+    }
+  } else {
+    el.textContent='nenhum ainda — cole abaixo';
+    el.classList.add('empty');
+    cl.style.display='none';
+    const mgBtn = document.getElementById('ts-manage');
+    if(mgBtn) mgBtn.style.display='none';
+  }
+}
+
+function detectStoryIdFront(text){
+  if(!text) return null;
+  const m = text.match(/\b([A-Z]{2,10}-\d{1,6})\b/);
+  return m ? m[1] : null;
+}
+
+function clearState(){
+  state = {requirement:'', lastResult:null};
+  saveState();
+  updateTopbarReq();
+  document.getElementById('main-input').value='';
+  document.getElementById('rw-chars').textContent='0 chars';
+  document.getElementById('analyze-btn').disabled=true;
+  // reset cards
+  [1,2,3,4,5].forEach(n=>{
+    document.getElementById('card-m'+n)?.classList.remove('has-result');
+    document.getElementById('score-m'+n).textContent='—';
+    document.getElementById('score-m'+n).style.color='var(--muted)';
+  });
+  document.getElementById('card-synth').classList.remove('has-result');
+  document.getElementById('synth-verdict').textContent='Execute uma análise para ver as correlações cross-engine.';
+  document.getElementById('synth-score').textContent='—';
+  document.getElementById('synth-score').style.color='var(--muted)';
+  document.getElementById('synth-body').innerHTML=`<div class="sc-empty">O Synthesis Engine cruza os resultados de todos os engines e encontra insights que nenhum engine sozinho produziria.</div>`;
+  ['norm','amb','risk','rules','gap','cov','synth'].forEach(s=>{
+    document.getElementById('fs-'+s)?.classList.remove('done','run');
+    const sc=document.getElementById('fsc-'+s); if(sc)sc.textContent='';
+  });
+  toast('Estado limpo','var(--muted)');
+}
+
+function setStatus(state, txt){
+  const led=document.getElementById('status-led');
+  led.className='status-led '+(state||'');
+  document.getElementById('status-txt').textContent=txt;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+function openConfig(){
+  document.getElementById('cfg-url').value=config.backendUrl;
+  document.getElementById('cfg-mode').value=config.mode;
+  document.getElementById('cfg-key').value=config.directKey||'';
+  onModeChange();
+  document.getElementById('config-overlay').classList.add('open');
+}
+function closeConfig(){ document.getElementById('config-overlay').classList.remove('open'); }
+function onModeChange(){
+  document.getElementById('key-wrap').style.display =
+    document.getElementById('cfg-mode').value==='direct' ? '' : 'none';
+}
+function saveConfig(){
+  config.backendUrl = document.getElementById('cfg-url').value.trim()||'http://localhost:8000';
+  config.mode       = document.getElementById('cfg-mode').value;
+  config.directKey  = document.getElementById('cfg-key').value.trim();
+  saveCfg();
+  closeConfig();
+  toast('Config salva','var(--ok)');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+let tT;
+function toast(msg,color='var(--ok)'){
+  const el=document.getElementById('toast');
+  document.getElementById('tdot').style.background=color;
+  document.getElementById('tmsg').textContent=msg;
+  el.classList.add('show');clearTimeout(tT);
+  tT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();runAnalysis();}
+  if(e.key==='Escape'){closeModule();closeConfig();closeHistory();}
+});
+
+loadStorage();
+updateTopbarReq();
+if(state.requirement){
+  document.getElementById('main-input').value=state.requirement;
+  onInput();
+}
+if(state.lastResult) renderAll(state.lastResult);
+
+// ══════════════════════════════════════════════════════════════
+// HISTORY DRAWER
+// ══════════════════════════════════════════════════════════════
+let historyData = [];
+let historyFiltered = [];
+let activeHistId = null;
+
+async function loadHistory() {
+  const list = document.getElementById('hd-list');
+  list.innerHTML = '<div class="hd-loading">Carregando...</div>';
+  try {
+    const url = config.backendUrl.replace(/\/$/, '') + '/api/v1/history?limit=50';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    historyData = await r.json();
+    historyFiltered = [...historyData];
+    renderHistoryList(historyFiltered);
+    document.getElementById('hd-count').textContent = historyData.length;
+  } catch(e) {
+    list.innerHTML = '<div class="hd-empty">Não foi possível carregar.<br>Verifique se o backend está rodando.</div>';
+  }
+}
+
+function openHistory() {
+  document.getElementById('hist-drawer').classList.add('open');
+  document.getElementById('hist-backdrop').classList.add('open');
+  loadHistory();
+}
+
+function closeHistory() {
+  document.getElementById('hist-drawer').classList.remove('open');
+  document.getElementById('hist-backdrop').classList.remove('open');
+}
+
+function filterHistory(q) {
+  const clear = document.getElementById('hd-search-clear');
+  clear.classList.toggle('show', q.length > 0);
+  if (!q.trim()) {
+    historyFiltered = [...historyData];
+  } else {
+    const qlo = q.toLowerCase();
+    historyFiltered = historyData.filter(h =>
+      (h.requirement || '').toLowerCase().includes(qlo) ||
+      (h.risk_level  || '').toLowerCase().includes(qlo) ||
+      (h.id          || '').toLowerCase().includes(qlo) ||
+      String(h.overall_score || '').includes(qlo)
+    );
+  }
+  renderHistoryList(historyFiltered, q.trim());
+}
+
+function clearHistSearch() {
+  document.getElementById('hd-search').value = '';
+  document.getElementById('hd-search-clear').classList.remove('show');
+  filterHistory('');
+}
+
+const RISK_STYLE = {
+  critical: 'background:rgba(255,82,82,.15);color:#ff5252',
+  high:     'background:rgba(255,171,64,.15);color:#ffab40',
+  medium:   'background:rgba(79,143,255,.15);color:#4f8fff',
+  low:      'background:rgba(76,175,138,.15);color:#4caf8a',
+};
+
+function renderHistoryList(list, query) {
+  query = query || '';
+  const el = document.getElementById('hd-list');
+  document.getElementById('hd-count').textContent = list.length;
+  if (!list.length) {
+    el.innerHTML = query
+      ? '<div class="hd-empty">Nenhum resultado para<br><strong style="color:var(--bright)">' + escHtml(query) + '</strong></div>'
+      : '<div class="hd-empty">Nenhuma análise salva ainda.<br>Analise um requisito para começar.</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(h) {
+    const score = h.overall_score != null ? h.overall_score : '—';
+    const scoreColor = h.overall_score != null
+      ? (h.overall_score >= 75 ? 'var(--ok)' : h.overall_score >= 50 ? 'var(--warn)' : 'var(--err)')
+      : 'var(--muted)';
+    const riskStyle = RISK_STYLE[h.risk_level] || 'background:var(--s4);color:var(--muted)';
+    const riskLabel = h.risk_level || '—';
+    const date = h.created_at ? new Date(h.created_at).toLocaleString('pt-BR', {
+      day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
+    }) : '';
+    const req = h.requirement || '';
+    const firstLine = req.split('\n')[0].trim();
+    const title = truncate(firstLine, 55);
+    const reqPreview = highlight(truncate(req, 120), query);
+    const timing = h.total_time ? h.total_time.toFixed(1) + 's' : '';
+    const isActive = h.id === activeHistId;
+    const storyUrl = h.story_id ? 'story.html?id=' + encodeURIComponent(h.story_id) : null;
+    return '<div class="hist-item' + (isActive ? ' active' : '') + '" onclick="loadFromHistory(\'' + h.id + '\')">' +
+      '<div class="hi-top">' +
+        '<div class="hi-score" style="color:' + scoreColor + '">' + score + '</div>' +
+        '<div class="hi-meta">' +
+          '<div class="hi-title">' + escHtml(title) + '</div>' +
+          '<div class="hi-date">' + date + '</div>' +
+        '</div>' +
+        '<span class="hi-risk" style="' + riskStyle + '">' + riskLabel + '</span>' +
+      '</div>' +
+      '<div class="hi-req">' + reqPreview + '</div>' +
+      '<div class="hi-footer" style="display:flex;align-items:center;gap:6px;margin-top:6px">' +
+        (timing ? '<span class="hi-time">' + timing + '</span>' : '') +
+        (storyUrl
+          ? '<a href="' + storyUrl + '" onclick="event.stopPropagation()" ' +
+            'style="margin-left:auto;font-size:8px;font-family:var(--mono);color:var(--m1);' +
+            'text-decoration:none;padding:2px 8px;border:1px solid rgba(79,143,255,.3);' +
+            'border-radius:3px;background:rgba(79,143,255,.08);white-space:nowrap" ' +
+            'aria-label="Gerenciar história ' + (h.story_id || '') + '">↗ Gerenciar</a>'
+          : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function loadFromHistory(id) {
+  activeHistId = id;
+  renderHistoryList(historyFiltered, document.getElementById('hd-search').value.trim());
+  try {
+    const url = config.backendUrl.replace(/\/$/, '') + '/api/v1/history/' + id;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (data.result) {
+      state.requirement = data.requirement || '';
+      state.lastResult  = data.result;
+      saveState();
+      updateTopbarReq();
+      const input = document.getElementById('main-input');
+      if (input) { input.value = state.requirement; onInput(); }
+      renderAll(data.result);
+      closeHistory();
+      toast('Análise carregada do histórico', 'var(--m1)');
+    } else {
+      toast('Resultado completo não disponível para este registro', 'var(--warn)');
+    }
+  } catch(e) {
+    toast('Erro ao carregar: ' + e.message, 'var(--err)');
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function truncate(s, n) {
+  s = String(s);
+  return s.length > n ? s.slice(0, n) + '...' : s;
+}
+function highlight(text, query) {
+  if (!query) return escHtml(text);
+  const safe = escHtml(text);
+  try {
+    const safeQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return safe.replace(new RegExp('(' + safeQ + ')', 'gi'), '<mark>$1</mark>');
+  } catch(e) { return safe; }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// VERSIONING
+// ══════════════════════════════════════════════════════════════
+let pendingVersionInfo = null;
+
+async function checkVersionBeforeAnalysis() {
+  const req = document.getElementById('main-input').value.trim();
+  if (!req || req.length < 5) return false;
+
+  if (config.mode === 'direct') {
+    // Direct mode — skip version check, just analyze
+    return true;
+  }
+
+  try {
+    const url = config.backendUrl.replace(/\/$/, '') + '/api/v1/check-version';
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({requirement: req})
+    });
+    if (!r.ok) return true; // on error, proceed normally
+    const info = await r.json();
+
+    if (!info.is_new && info.story_id) {
+      // Story exists — show version dialog
+      pendingVersionInfo = info;
+      showVersionDialog(info);
+      return false; // pause analysis
+    }
+  } catch(e) {
+    // ignore — proceed with analysis
+  }
+  return true; // proceed
+}
+
+function showVersionDialog(info) {
+  document.getElementById('vd-story-id').textContent   = info.story_id || '—';
+  document.getElementById('vd-cur-ver').textContent    = 'v' + (info.current_version || 1);
+  document.getElementById('vd-next-ver').textContent   = info.next_version || 2;
+
+  const last = info.last_analysis || {};
+  const score = last.overall_score != null ? last.overall_score : '—';
+  const scoreColor = last.overall_score != null
+    ? (last.overall_score >= 75 ? 'var(--ok)' : last.overall_score >= 50 ? 'var(--warn)' : 'var(--err)')
+    : 'var(--muted)';
+  document.getElementById('vd-cur-score').textContent  = score;
+  document.getElementById('vd-cur-score').style.color  = scoreColor;
+  document.getElementById('vd-cur-risk').textContent   = last.risk_level || '—';
+
+  const changed = info.text_changed;
+  const dot = document.getElementById('vd-change-dot');
+  dot.style.background = changed ? 'var(--warn)' : 'var(--ok)';
+  document.getElementById('vd-change-txt').textContent = info.change_summary || '—';
+
+  document.getElementById('ver-overlay').classList.add('open');
+  document.getElementById('ver-dialog').classList.add('open');
+}
+
+function closeVersionDialog() {
+  document.getElementById('ver-overlay').classList.remove('open');
+  document.getElementById('ver-dialog').classList.remove('open');
+}
+
+async function confirmNewVersion() {
+  closeVersionDialog();
+  await runAnalysis(true); // force = skip version check
+}
+
+function skipVersion() {
+  closeVersionDialog();
+  pendingVersionInfo = null;
+}
+
+async function viewVersionHistory() {
+  closeVersionDialog();
+  if (pendingVersionInfo && pendingVersionInfo.story_id) {
+    // Open history drawer with search pre-filled
+    openHistory();
+    setTimeout(() => {
+      const search = document.getElementById('hd-search');
+      if (search) {
+        search.value = pendingVersionInfo.story_id;
+        filterHistory(pendingVersionInfo.story_id);
+      }
+    }, 400);
+  }
+}
+
+</script>
+
+<!-- HISTORY BACKDROP -->
+<div class="hist-backdrop" id="hist-backdrop" onclick="closeHistory()"></div>
+
+<!-- HISTORY DRAWER -->
+<div class="hist-drawer" id="hist-drawer">
+  <div class="hd-top">
+    <div class="hd-title-row">
+      <div class="hd-title">Histórico de Análises</div>
+      <div class="hd-count" id="hd-count">0</div>
+      <button class="hd-close" onclick="closeHistory()">×</button>
+    </div>
+    <div class="hd-search-wrap">
+      <span class="hd-search-icon">🔍</span>
+      <input class="hd-search" id="hd-search" type="text"
+        placeholder="Buscar por BSAG-1724, login, qualquer texto..."
+        oninput="filterHistory(this.value)">
+      <button class="hd-search-clear" id="hd-search-clear" onclick="clearHistSearch()">×</button>
+    </div>
+  </div>
+  <div class="hd-list" id="hd-list">
+    <div class="hd-loading">Carregando histórico...</div>
+  </div>
+  <div class="hd-footer">
+    <button class="hd-refresh-btn" onclick="loadHistory()">↻ Atualizar</button>
+  </div>
+</div>
+
+<!-- VERSION OVERLAY -->
+<div class="ver-overlay" id="ver-overlay" onclick="skipVersion()"></div>
+
+<!-- VERSION DIALOG -->
+<div class="ver-dialog" id="ver-dialog">
+  <div class="vd-hd">
+    <div class="vd-title">História já analisada</div>
+    <div class="vd-sub">Este ID já possui análises anteriores no sistema</div>
+  </div>
+  <div class="vd-body">
+    <div><span class="vd-story-badge" id="vd-story-id">—</span></div>
+    <div class="vd-info">
+      <div class="vd-info-item">
+        <div class="vd-info-label">Versão atual</div>
+        <div class="vd-info-val" id="vd-cur-ver">—</div>
+      </div>
+      <div class="vd-info-item">
+        <div class="vd-info-label">Score anterior</div>
+        <div class="vd-info-val" id="vd-cur-score">—</div>
+      </div>
+      <div class="vd-info-item">
+        <div class="vd-info-label">Risk level</div>
+        <div class="vd-info-val" id="vd-cur-risk">—</div>
+      </div>
+    </div>
+    <div class="vd-change">
+      <div class="vd-change-dot" id="vd-change-dot"></div>
+      <span id="vd-change-txt">—</span>
+    </div>
+  </div>
+  <div class="vd-ft">
+    <button class="vd-btn vd-btn-skip" onclick="skipVersion()" title="Analisar sem versionar">Ignorar</button>
+    <button class="vd-btn vd-btn-view" onclick="viewVersionHistory()">Ver histórico</button>
+    <button class="vd-btn vd-btn-new" onclick="confirmNewVersion()">⚡ Criar v<span id="vd-next-ver">2</span></button>
+  </div>
+</div>
+
+</body>
+</html>

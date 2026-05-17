@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão da História · QA Intelligence System</title>
+<meta name="description" content="Tela de gestão de história — defeitos, versões, vínculos e conhecimento">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500&display=swap');
+
+/* ── RESET & TOKENS ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060810; --s1:#090c14; --s2:#0d1120; --s3:#111829; --s4:#162035;
+  --b1:#1a2840; --b2:#22334f; --b3:#2c4268;
+  --muted:#324e70; --soft:#476898; --body:#6a8fb0;
+  --bright:#94b8d4; --hi:#bcd6e8; --white:#ddeef8;
+  --font:'Sora',sans-serif; --mono:'Inconsolata',monospace;
+  --m1:#4f8fff; --m2:#9b6fff; --m3:#26c6da; --m4:#ff5252; --m5:#ffab40;
+  --ok:#4caf8a; --warn:#ffab40; --err:#ff5252;
+  /* WCAG contrast-safe text on dark bg */
+  --text-primary:#ddeef8;   /* 12.5:1 on --bg */
+  --text-secondary:#94b8d4; /* 5.8:1 on --bg  */
+  --text-muted:#6a8fb0;     /* 4.6:1 on --bg  */
+  /* focus ring */
+  --focus:#4f8fff;
+  /* layout */
+  --topbar-h:56px;
+  --sidebar-w:240px;
+}
+
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--body);
+  min-height:100vh;
+  line-height:1.6;
+}
+
+/* ── FOCUS VISIBLE (WCAG 2.4.7) ─────────────────────────────── */
+:focus-visible{
+  outline:2px solid var(--focus);
+  outline-offset:3px;
+  border-radius:3px;
+}
+:focus:not(:focus-visible){outline:none;}
+
+/* ── SKIP LINK (WCAG 2.4.1) ─────────────────────────────────── */
+.skip-link{
+  position:fixed;top:-100px;left:16px;z-index:9999;
+  background:var(--m1);color:#fff;
+  padding:10px 18px;border-radius:6px;
+  font-size:13px;font-weight:600;
+  transition:top .15s;
+}
+.skip-link:focus{top:16px;}
+
+/* ── TOPBAR ──────────────────────────────────────────────────── */
+.topbar{
+  height:var(--topbar-h);
+  display:flex;align-items:center;gap:12px;
+  padding:0 20px;
+  background:var(--s1);border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:100;
+}
+.tb-back{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:6px;
+  background:transparent;border:1px solid var(--b2);
+  color:var(--text-secondary);font-family:var(--font);font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;text-decoration:none;
+  white-space:nowrap;
+}
+.tb-back:hover{background:var(--s3);color:var(--text-primary);}
+.tb-back svg{width:14px;height:14px;flex-shrink:0;}
+.tb-divider{width:1px;height:20px;background:var(--b2);}
+.tb-breadcrumb{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-family:var(--mono);color:var(--text-muted);
+  overflow:hidden;
+}
+.tb-breadcrumb a{color:var(--text-secondary);text-decoration:none;}
+.tb-breadcrumb a:hover{color:var(--text-primary);text-decoration:underline;}
+.tb-sep{color:var(--b3);}
+.tb-current{color:var(--text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:6px;
+  font-family:var(--font);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;border:none;
+  white-space:nowrap;
+}
+.btn-primary{background:var(--m1);color:#fff;}
+.btn-primary:hover{opacity:.87;}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--b2);}
+.btn-ghost:hover{background:var(--s3);color:var(--text-primary);}
+.btn-danger{background:rgba(255,82,82,.12);color:var(--err);border:1px solid rgba(255,82,82,.25);}
+.btn-danger:hover{background:rgba(255,82,82,.2);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* ── LAYOUT ──────────────────────────────────────────────────── */
+.page{
+  max-width:1200px;margin:0 auto;
+  padding:24px 20px 80px;
+}
+
+/* ── STORY HEADER ────────────────────────────────────────────── */
+.story-header{
+  background:var(--s1);border:1px solid var(--b1);border-radius:12px;
+  padding:20px 24px;margin-bottom:24px;
+}
+.sh-top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.sh-id{
+  font-size:11px;font-family:var(--mono);font-weight:700;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(79,143,255,.15);color:var(--m1);
+  border:1px solid rgba(79,143,255,.3);
+  white-space:nowrap;
+}
+.sh-title{
+  font-size:20px;font-weight:700;color:var(--text-primary);
+  line-height:1.3;flex:1;min-width:200px;
+}
+.sh-meta{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;
+}
+.sh-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-family:var(--mono);
+  padding:3px 10px;border-radius:10px;
+}
+.sh-score{font-size:28px;font-family:var(--mono);font-weight:700;line-height:1;}
+.sh-stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+  gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--b1);
+}
+.sh-stat{display:flex;flex-direction:column;gap:2px;}
+.sh-stat-val{font-size:18px;font-family:var(--mono);font-weight:700;color:var(--text-primary);}
+.sh-stat-label{font-size:9px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
+
+/* ── TABS ────────────────────────────────────────────────────── */
+.tabs-nav{
+  display:flex;gap:0;
+  border-bottom:1px solid var(--b1);
+  margin-bottom:20px;overflow-x:auto;
+}
+.tabs-nav::-webkit-scrollbar{height:3px;}
+.tabs-nav::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.tab-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:10px 18px;
+  font-family:var(--font);font-size:12px;font-weight:500;
+  color:var(--text-muted);
+  background:transparent;border:none;
+  border-bottom:2px solid transparent;
+  cursor:pointer;transition:all .15s;
+  white-space:nowrap;
+}
+.tab-btn:hover{color:var(--text-secondary);}
+.tab-btn[aria-selected="true"]{
+  color:var(--text-primary);
+  border-bottom-color:var(--m1);
+}
+.tab-count{
+  font-size:9px;font-family:var(--mono);
+  background:var(--s3);border:1px solid var(--b1);
+  border-radius:10px;padding:1px 7px;
+}
+.tab-btn[aria-selected="true"] .tab-count{
+  background:rgba(79,143,255,.15);color:var(--m1);
+}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── SECTION ─────────────────────────────────────────────────── */
+.section-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;flex-wrap:wrap;gap:8px;
+}
+.section-title{
+  font-size:11px;font-family:var(--mono);color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.1em;
+}
+
+/* ── DEFECT LIST ─────────────────────────────────────────────── */
+.defect-item{
+  background:var(--s1);border:1px solid var(--b1);border-radius:8px;
+  display:flex;gap:0;overflow:hidden;margin-bottom:8px;
+  transition:border-color .15s;
+}
+.defect-item:hover{border-color:var(--b2);}
+.defect-sev-bar{width:4px;flex-shrink:0;}
+.defect-body{padding:12px 14px;flex:1;min-width:0;}
+.defect-hd{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
+.defect-title{font-size:12px;font-weight:600;color:var(--text-primary);flex:1;min-width:120px;}
+.defect-badges{display:flex;gap:5px;flex-wrap:wrap;}
+.badge{
+  font-size:9px;font-family:var(--mono);font-weight:500;
+  padding:2px 8px;border-radius:10px;white-space:nowrap;
+}
+.badge-critical{background:rgba(255,82,82,.15);color:#ff5252;}
+.badge-high{background:rgba(255,171,64,.15);color:#ffab40;}
+.badge-medium{background:rgba(79,143,255,.15);color:#4f8fff;}
+.badge-low{background:rgba(76,175,138,.15);color:#4caf8a;}
+.badge-open{background:rgba(255,82,82,.12);color:#ff5252;}
+.badge-fixed{background:rgba(76,175,138,.12);color:#4caf8a;}
+.badge-reopened{background:rgba(255,171,64,.12);color:#ffab40;}
+.badge-wont_fix{background:var(--s3);color:var(--text-muted);}
+.badge-qa{background:rgba(155,111,255,.12);color:#9b6fff;}
+.badge-production{background:rgba(255,82,82,.1);color:#ff8080;}
+.badge-regression{background:rgba(38,198,218,.1);color:#26c6da;}
+.defect-desc{font-size:11px;font-family:var(--mono);color:var(--text-secondary);line-height:1.6;margin-bottom:8px;}
+.defect-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:9px;font-family:var(--mono);color:var(--text-muted);}
+.defect-actions{
+  display:flex;flex-direction:column;gap:4px;
+  padding:10px;justify-content:flex-start;flex-shrink:0;
+}
+
+/* ── VERSION TIMELINE ────────────────────────────────────────── */
+.version-list{display:flex;flex-direction:column;gap:10px;}
+.version-item{
+  background:var(--s1);border:1px solid var(--b1);border-radius:8px;
+  padding:14px 16px;display:flex;gap:14px;align-items:flex-start;
+  transition:border-color .15s;
+}
+.version-item:hover{border-color:var(--b2);}
+.version-item.current{border-color:var(--m1);border-left:3px solid var(--m1);}
+.ver-num{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--s3);border:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  color:var(--text-secondary);flex-shrink:0;
+}
+.version-item.current .ver-num{
+  background:rgba(79,143,255,.15);color:var(--m1);border-color:rgba(79,143,255,.3);
+}
+.ver-body{flex:1;min-width:0;}
+.ver-date{font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-bottom:4px;}
+.ver-scores{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.ver-score{display:flex;flex-direction:column;gap:1px;}
+.ver-score-val{font-size:14px;font-family:var(--mono);font-weight:700;}
+.ver-score-lbl{font-size:8px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;}
+.ver-actions{display:flex;gap:5px;flex-shrink:0;}
+
+/* ── LINKS ───────────────────────────────────────────────────── */
+.link-item{
+  background:var(--s1);border:1px solid var(--b1);border-radius:8px;
+  padding:12px 14px;display:flex;gap:12px;align-items:center;
+  margin-bottom:8px;transition:border-color .15s;
+}
+.link-item:hover{border-color:var(--b2);}
+.link-type-badge{
+  font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:10px;
+  background:rgba(155,111,255,.12);color:var(--m2);white-space:nowrap;
+}
+.link-id{font-size:12px;font-family:var(--mono);font-weight:700;color:var(--m1);}
+.link-title{font-size:12px;color:var(--text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.link-arrow{color:var(--text-muted);font-size:14px;}
+
+/* ── KNOWLEDGE LIST ──────────────────────────────────────────── */
+.knowledge-item{
+  background:var(--s1);border:1px solid var(--b1);border-radius:8px;
+  padding:12px 14px;margin-bottom:8px;
+  transition:border-color .15s;
+}
+.knowledge-item:hover{border-color:var(--b2);}
+.ki-hd{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.ki-cat{font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;}
+.ki-title{font-size:12px;font-weight:600;color:var(--text-primary);flex:1;}
+.ki-desc{font-size:11px;font-family:var(--mono);color:var(--text-secondary);line-height:1.6;}
+.ki-mit{font-size:10px;font-family:var(--mono);color:var(--m1);margin-top:5px;}
+
+/* ── EMPTY STATE ─────────────────────────────────────────────── */
+.empty{
+  padding:40px 20px;text-align:center;
+  color:var(--text-muted);
+}
+.empty-icon{font-size:32px;margin-bottom:10px;opacity:.4;}
+.empty-title{font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;}
+.empty-sub{font-size:11px;font-family:var(--mono);line-height:1.7;max-width:280px;margin:0 auto;}
+
+/* ── MODAL ───────────────────────────────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+  z-index:500;align-items:center;justify-content:center;
+  padding:16px;
+}
+.overlay.open{display:flex;}
+.modal{
+  background:var(--s2);border:1px solid var(--b2);border-radius:12px;
+  width:min(560px,100%);max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);
+}
+.modal::-webkit-scrollbar{width:4px;}
+.modal::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.modal-hd{
+  padding:18px 22px;border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;background:var(--s2);z-index:5;
+}
+.modal-hd h2{font-size:15px;font-weight:700;color:var(--text-primary);flex:1;}
+.modal-close{
+  background:none;border:none;color:var(--text-muted);
+  cursor:pointer;font-size:20px;line-height:1;padding:4px;
+}
+.modal-close:hover{color:var(--text-primary);}
+.modal-body{padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+.modal-footer{
+  padding:14px 22px;border-top:1px solid var(--b1);
+  display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;
+}
+
+/* ── FORM ────────────────────────────────────────────────────── */
+.f-field{display:flex;flex-direction:column;gap:5px;}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.f-label{
+  font-size:10px;font-family:var(--mono);color:var(--text-secondary);
+  font-weight:500;letter-spacing:.03em;
+}
+.f-required{color:var(--err);margin-left:2px;}
+.f-input,.f-select,.f-textarea{
+  background:var(--s3);border:1px solid var(--b2);border-radius:6px;
+  color:var(--text-primary);font-family:var(--mono);font-size:12px;
+  padding:9px 12px;outline:none;transition:border-color .2s;width:100%;
+}
+.f-input:focus,.f-select:focus,.f-textarea:focus{border-color:var(--m1);}
+.f-input::placeholder,.f-textarea::placeholder{color:var(--text-muted);}
+.f-textarea{resize:vertical;min-height:70px;line-height:1.6;}
+.f-select option{background:var(--s3);}
+.f-hint{font-size:9px;font-family:var(--mono);color:var(--text-muted);line-height:1.6;}
+
+/* ── STATUS UPDATE INLINE ────────────────────────────────────── */
+.status-select{
+  background:var(--s3);border:1px solid var(--b1);border-radius:5px;
+  color:var(--text-primary);font-family:var(--mono);font-size:10px;
+  padding:4px 8px;outline:none;cursor:pointer;
+}
+.status-select:focus{border-color:var(--m1);}
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--s3);border:1px solid var(--b2);border-radius:8px;
+  padding:10px 18px;font-size:12px;font-family:var(--mono);color:var(--text-primary);
+  display:flex;align-items:center;gap:8px;z-index:999;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;
+  white-space:nowrap;max-width:90vw;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ── LOADING ─────────────────────────────────────────────────── */
+.loading{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 20px;gap:14px;
+}
+.loading-bar{width:200px;height:2px;background:var(--b1);border-radius:1px;overflow:hidden;}
+.loading-fill{height:100%;background:var(--m1);animation:scan 1.4s linear infinite;width:30%;}
+@keyframes scan{0%{transform:translateX(-200%)}100%{transform:translateX(500%)}}
+.loading-label{font-size:11px;font-family:var(--mono);color:var(--text-muted);}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:768px){
+  .page{padding:16px 12px 100px;}
+  .story-header{padding:14px 16px;}
+  .sh-title{font-size:16px;}
+  .sh-stats{grid-template-columns:repeat(2,1fr);}
+  .f-row{grid-template-columns:1fr;}
+  .tab-btn{padding:8px 12px;font-size:11px;}
+  .defect-actions{flex-direction:row;padding:10px 10px 10px 0;}
+  .topbar{padding:0 12px;}
+  .tb-back span{display:none;}/* icon only on mobile */
+  .tb-breadcrumb{font-size:10px;}
+  .sh-top{gap:10px;}
+  .modal{max-height:95vh;}
+  .modal-body{padding:14px 16px;}
+  .modal-footer{padding:12px 16px;}
+}
+
+@media(max-width:480px){
+  .sh-stats{grid-template-columns:1fr 1fr;}
+  .ver-scores{gap:8px;}
+  .tabs-nav{gap:0;}
+  .tab-btn{padding:8px 10px;}
+}
+
+/* ── PRINT ───────────────────────────────────────────────────── */
+@media print{
+  .topbar,.tab-btn,.btn,.toast,.overlay{display:none!important;}
+  .tab-panel{display:block!important;}
+  body{background:#fff;color:#000;}
+}
+</style>
+</head>
+<body>
+
+<!-- SKIP LINK (WCAG 2.4.1) -->
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+
+<!-- TOPBAR -->
+<header class="topbar" role="banner">
+  <a class="tb-back" href="index.html" aria-label="Voltar ao Hub">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path d="M9 2L4 7l5 5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Hub</span>
+  </a>
+  <div class="tb-divider" aria-hidden="true"></div>
+  <nav class="tb-breadcrumb" aria-label="Breadcrumb">
+    <a href="index.html">QA System</a>
+    <span class="tb-sep" aria-hidden="true">›</span>
+    <span class="tb-current" id="tb-story-id" aria-current="page">Carregando...</span>
+  </nav>
+  <div class="tb-actions">
+    <button class="btn btn-ghost btn-sm" onclick="window.print()" aria-label="Imprimir página">
+      ⎙ Imprimir
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="openDefectModal()" id="btn-new-defect" disabled>
+      + Defeito
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="page" id="main-content">
+
+  <!-- Loading state -->
+  <div class="loading" id="loading-state" role="status" aria-live="polite">
+    <div class="loading-bar"><div class="loading-fill"></div></div>
+    <div class="loading-label">Carregando história...</div>
+  </div>
+
+  <!-- Story content (hidden until loaded) -->
+  <div id="story-content" hidden>
+
+    <!-- HEADER -->
+    <section class="story-header" aria-labelledby="story-title">
+      <div class="sh-top">
+        <span class="sh-id" id="hdr-story-id" aria-label="ID da história"></span>
+        <h1 class="sh-title" id="story-title">—</h1>
+        <div id="hdr-score" class="sh-score" aria-label="Score de qualidade"></div>
+      </div>
+      <div class="sh-meta" id="hdr-meta" role="list" aria-label="Metadados da história"></div>
+      <div class="sh-stats" id="hdr-stats" role="list" aria-label="Estatísticas"></div>
+    </section>
+
+    <!-- TABS -->
+    <div role="tablist" aria-label="Seções da história" class="tabs-nav" id="tabs-nav">
+      <button class="tab-btn" role="tab" aria-selected="true"
+        aria-controls="tab-versions" id="btn-versions" onclick="switchTab('versions',this)">
+        📋 Versões <span class="tab-count" id="cnt-versions">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-defects" id="btn-defects" onclick="switchTab('defects',this)">
+        🐛 Defeitos <span class="tab-count" id="cnt-defects">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-links" id="btn-links" onclick="switchTab('links',this)">
+        🔗 Vínculos <span class="tab-count" id="cnt-links">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-traceability" id="btn-traceability" onclick="switchTab('traceability',this)">
+        🔗 RTM <span class="tab-count" id="cnt-traceability">0</span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="tab-knowledge" id="btn-knowledge" onclick="switchTab('knowledge',this)">
+        📚 Conhecimento <span class="tab-count" id="cnt-knowledge">0</span>
+      </button>
+    </div>
+
+    <!-- TAB: VERSIONS -->
+    <section id="tab-versions" role="tabpanel" aria-labelledby="btn-versions" class="tab-panel active">
+      <div class="section-hd">
+        <h2 class="section-title">Histórico de versões</h2>
+      </div>
+      <div class="version-list" id="versions-list" aria-live="polite"></div>
+    </section>
+
+    <!-- TAB: DEFECTS -->
+    <section id="tab-defects" role="tabpanel" aria-labelledby="btn-defects" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Defeitos vinculados</h2>
+        <button class="btn btn-primary btn-sm" onclick="openDefectModal()">+ Novo defeito</button>
+      </div>
+      <div id="defects-list" aria-live="polite"></div>
+    </section>
+
+    <!-- TAB: LINKS -->
+    <section id="tab-links" role="tabpanel" aria-labelledby="btn-links" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Família desta história</h2>
+        <button class="btn btn-ghost btn-sm" onclick="openLinkModal()">+ Vincular melhoria</button>
+      </div>
+      <div id="links-content" aria-live="polite"></div>
+    </section>
+
+    <!-- TAB: TRACEABILITY -->
+    <section id="tab-traceability" role="tabpanel" aria-labelledby="btn-traceability" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Matriz de Rastreabilidade (RTM)</h2>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">Gerada da última análise</span>
+      </div>
+      <div id="traceability-content" aria-live="polite">
+        <div class="empty"><div class="empty-icon">🔗</div><div class="empty-title">Nenhuma RTM disponível</div><div class="empty-sub">Execute uma análise no Hub para gerar a RTM desta história.</div></div>
+      </div>
+    </section>
+
+    <!-- TAB: KNOWLEDGE -->
+    <section id="tab-knowledge" role="tabpanel" aria-labelledby="btn-knowledge" class="tab-panel" hidden>
+      <div class="section-hd">
+        <h2 class="section-title">Conhecimento corporativo vinculado</h2>
+      </div>
+      <div id="knowledge-list" aria-live="polite"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- MODAL: NEW DEFECT ────────────────────────────────────────── -->
+<div class="overlay" id="defect-overlay" role="dialog" aria-modal="true"
+  aria-labelledby="defect-modal-title"
+  onclick="if(event.target===this)closeDefectModal()">
+  <div class="modal" onclick="e=>e.stopPropagation()">
+    <div class="modal-hd">
+      <h2 id="defect-modal-title">Registrar Defeito</h2>
+      <button class="modal-close" onclick="closeDefectModal()" aria-label="Fechar modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f-row">
+        <div class="f-field">
+          <label class="f-label" for="d-jira">ID Jira <span class="f-hint">(opcional)</span></label>
+          <input class="f-input" id="d-jira" type="text" placeholder="BSAG-089" aria-describedby="d-jira-hint">
+          <span class="f-hint" id="d-jira-hint">Ex: BSAG-089, QA-123</span>
+        </div>
+        <div class="f-field">
+          <label class="f-label" for="d-version">Versão encontrado</label>
+          <input class="f-input" id="d-version" type="number" min="1" placeholder="1">
+        </div>
+      </div>
+      <div class="f-field">
+        <label class="f-label" for="d-title">Título <span class="f-required" aria-label="obrigatório">*</span></label>
+        <input class="f-input" id="d-title" type="text" placeholder="Descrição curta do defeito..." required>
+      </div>
+      <div class="f-field">
+        <label class="f-label" for="d-desc">Descrição detalhada</label>
+        <textarea class="f-textarea" id="d-desc" placeholder="Passos para reproduzir, comportamento esperado vs atual..."></textarea>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <label class="f-label" for="d-severity">Severidade <span class="f-required" aria-label="obrigatório">*</span></label>
+          <select class="f-select" id="d-severity" required>
+            <option value="">Selecione...</option>
+            <option value="critical">🔴 Critical</option>
+            <option value="high">🟠 High</option>
+            <option value="medium">🔵 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+        </div>
+        <div class="f-field">
+          <label class="f-label" for="d-type">Tipo <span class="f-required" aria-label="obrigatório">*</span></label>
+          <select class="f-select" id="d-type" required>
+            <option value="">Selecione...</option>
+            <option value="qa">QA (encontrado em testes)</option>
+            <option value="production">Produção</option>
+            <option value="regression">Regressão</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <label class="f-label" for="d-sprint-found">Sprint encontrado</label>
+          <input class="f-input" id="d-sprint-found" type="text" placeholder="Sprint 8">
+        </div>
+        <div class="f-field">
+          <label class="f-label" for="d-status">Status inicial</label>
+          <select class="f-select" id="d-status">
+            <option value="open">Aberto</option>
+            <option value="fixed">Corrigido</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-field">
+        <label class="f-label" for="d-evidence">Evidências / Links</label>
+        <textarea class="f-textarea" id="d-evidence" style="min-height:50px" placeholder="Links de screenshots, logs, Jira comments..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDefectModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDefect()">Salvar Defeito</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LINK STORY ───────────────────────────────────────── -->
+<div class="overlay" id="link-overlay" role="dialog" aria-modal="true"
+  aria-labelledby="link-modal-title"
+  onclick="if(event.target===this)closeLinkModal()">
+  <div class="modal" onclick="e=>e.stopPropagation()">
+    <div class="modal-hd">
+      <h2 id="link-modal-title">Vincular História</h2>
+      <button class="modal-close" onclick="closeLinkModal()" aria-label="Fechar modal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="f-field">
+        <label class="f-label" for="link-child-id">ID da história a vincular <span class="f-required" aria-label="obrigatório">*</span></label>
+        <input class="f-input" id="link-child-id" type="text"
+          placeholder="BSAG-1891" oninput="searchLinkStories(this.value)"
+          aria-describedby="link-search-hint">
+        <span class="f-hint" id="link-search-hint">Digite o ID da história filha (melhoria)</span>
+      </div>
+      <div id="link-search-results"></div>
+      <div class="f-field">
+        <label class="f-label" for="link-type">Tipo de vínculo</label>
+        <select class="f-select" id="link-type">
+          <option value="improvement">Melhoria</option>
+          <option value="bugfix">Correção de bug</option>
+          <option value="dependency">Dependência</option>
+          <option value="related">Relacionada</option>
+        </select>
+      </div>
+      <div class="f-field">
+        <label class="f-label" for="link-desc">Descrição do vínculo</label>
+        <input class="f-input" id="link-desc" type="text" placeholder="Ex: Exportar resultado ISIN para Excel">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLinkModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLink()">Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <div class="toast-dot" id="toast-dot"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+const CFG_KEY = 'qa_system_config';
+let config = { backendUrl: 'http://localhost:8000', mode: 'backend' };
+try { Object.assign(config, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch(e) {}
+
+const API = () => config.backendUrl.replace(/\/$/, '');
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let storyId    = null;
+let versions   = [];
+let defects    = [];
+let family     = {};
+let knowledge  = {};
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  storyId = params.get('id');
+
+  if (!storyId) {
+    showError('ID da história não informado. Use ?id=BSAG-1724 na URL.');
+    return;
+  }
+
+  document.title = `${storyId} · QA Intelligence System`;
+  document.getElementById('tb-story-id').textContent = storyId;
+  document.getElementById('hdr-story-id').textContent = storyId;
+  document.getElementById('hdr-story-id').setAttribute('aria-label', `ID da história: ${storyId}`);
+  document.getElementById('btn-new-defect').disabled = false;
+
+  await loadAll();
+});
+
+async function loadAll() {
+  try {
+    const [versRes, defRes, famRes, knowRes] = await Promise.allSettled([
+      fetch(`${API()}/api/v1/stories/${storyId}/history`),
+      fetch(`${API()}/api/v1/stories/${storyId}/defects`),
+      fetch(`${API()}/api/v1/stories/${storyId}/family`),
+      fetch(`${API()}/api/v1/stories/${storyId}/knowledge`),
+    ]);
+
+    versions  = versRes.status  === 'fulfilled' && versRes.value.ok  ? await versRes.value.json()  : [];
+    defects   = defRes.status   === 'fulfilled' && defRes.value.ok   ? await defRes.value.json()   : [];
+    family    = famRes.status   === 'fulfilled' && famRes.value.ok   ? await famRes.value.json()   : {};
+    knowledge = knowRes.status  === 'fulfilled' && knowRes.value.ok  ? await knowRes.value.json()  : {};
+
+    // Load traceability from latest analysis result
+    if (versions.length > 0) {
+      try {
+        const latest = versions[0];
+        if (latest.id) {
+          const traRes = await fetch(`${API()}/api/v1/history/${latest.id}`);
+          if (traRes.ok) {
+            const fullAnalysis = await traRes.json();
+            window._latestTraceability = fullAnalysis?.result?.traceability || null;
+          }
+        }
+      } catch(e) { window._latestTraceability = null; }
+    }
+
+    renderAll();
+    document.getElementById('loading-state').hidden = true;
+    document.getElementById('story-content').hidden = false;
+  } catch(e) {
+    showError('Erro ao carregar dados: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+const scoreColor = s => s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--err)';
+const SEV_COLOR  = { critical:'#ff5252', high:'#ffab40', medium:'#4f8fff', low:'#4caf8a' };
+const RISK_STYLE = {
+  critical: 'background:rgba(255,82,82,.15);color:#ff5252',
+  high:     'background:rgba(255,171,64,.15);color:#ffab40',
+  medium:   'background:rgba(79,143,255,.15);color:#4f8fff',
+  low:      'background:rgba(76,175,138,.15);color:#4caf8a',
+};
+const STATUS_LABEL = { open:'Aberto', fixed:'Corrigido', reopened:'Reaberto', wont_fix:'Não corrigir' };
+const TYPE_LABEL   = { qa:'QA', production:'Produção', regression:'Regressão' };
+const LINK_LABEL   = { improvement:'Melhoria', bugfix:'Correção', dependency:'Dependência', related:'Relacionada' };
+const CAT_LABEL    = { padrao:'Padrão', bug:'Bug Histórico', integ:'Integração', gloss:'Glossário', comp:'Compliance', risco:'Risco', heur:'Heurística' };
+const CAT_COLOR    = { padrao:'var(--m1)', bug:'var(--err)', integ:'var(--m3)', gloss:'var(--m5)', comp:'var(--ok)', risco:'var(--err)', heur:'var(--m2)' };
+
+function renderAll() {
+  renderHeader();
+  renderVersions();
+  renderDefects();
+  renderLinks();
+  renderKnowledge();
+  renderTraceability();
+  updateCounts();
+}
+
+function renderHeader() {
+  const latest = versions[0];
+  if (!latest) {
+    document.getElementById('story-title').textContent = storyId;
+    return;
+  }
+  const req = latest.requirement || '';
+  const firstLine = req.split('\n')[0].replace(/^[A-Z]+-\d+\s*/,'').replace(/^\[.*?\]\s*/,'').trim();
+  document.getElementById('story-title').textContent = firstLine || storyId;
+
+  const score = latest.overall_score;
+  const scoreEl = document.getElementById('hdr-score');
+  scoreEl.textContent = score != null ? score : '—';
+  scoreEl.style.color = score != null ? scoreColor(score) : 'var(--text-muted)';
+  scoreEl.setAttribute('aria-label', `Score de qualidade: ${score ?? 'não disponível'}`);
+
+  // Meta badges
+  const riskStyle = RISK_STYLE[latest.risk_level] || 'background:var(--s3);color:var(--text-muted)';
+  document.getElementById('hdr-meta').innerHTML = `
+    <span role="listitem" class="sh-badge" style="${riskStyle}" aria-label="Nível de risco: ${latest.risk_level || 'não avaliado'}">
+      ⚠ ${latest.risk_level || '—'}
+    </span>
+    <span role="listitem" class="sh-badge" style="background:var(--s3);color:var(--text-muted)"
+      aria-label="Versão atual: ${latest.version}">
+      v${latest.version} atual
+    </span>
+    <span role="listitem" class="sh-badge" style="background:var(--s3);color:var(--text-muted)"
+      aria-label="Última análise em ${fmtDate(latest.created_at)}">
+      🕐 ${fmtDate(latest.created_at)}
+    </span>`;
+
+  // Stats
+  const openDef   = defects.filter(d => d.status === 'open' || d.status === 'reopened').length;
+  const totalVers  = versions.length;
+  const children   = (family.children || []).length;
+  document.getElementById('hdr-stats').innerHTML = `
+    <div role="listitem" class="sh-stat">
+      <div class="sh-stat-val" aria-label="${totalVers} versões analisadas">${totalVers}</div>
+      <div class="sh-stat-label">Versões</div>
+    </div>
+    <div role="listitem" class="sh-stat">
+      <div class="sh-stat-val" style="color:${openDef > 0 ? 'var(--err)' : 'var(--ok)'}"
+        aria-label="${openDef} defeitos abertos">${openDef}</div>
+      <div class="sh-stat-label">Defeitos abertos</div>
+    </div>
+    <div role="listitem" class="sh-stat">
+      <div class="sh-stat-val" aria-label="${defects.length} defeitos total">${defects.length}</div>
+      <div class="sh-stat-label">Total defeitos</div>
+    </div>
+    <div role="listitem" class="sh-stat">
+      <div class="sh-stat-val" aria-label="${children} melhorias">${children}</div>
+      <div class="sh-stat-label">Melhorias</div>
+    </div>`;
+}
+
+function renderVersions() {
+  const el = document.getElementById('versions-list');
+  if (!versions.length) {
+    el.innerHTML = emptyState('📋', 'Nenhuma versão', 'Analise esta história no Hub para criar a primeira versão.');
+    return;
+  }
+  el.innerHTML = versions.map((v, i) => {
+    const isCurrent = i === 0;
+    const sc = v.overall_score;
+    return `<article class="version-item ${isCurrent ? 'current' : ''}"
+      aria-label="Versão ${v.version}${isCurrent ? ' (atual)' : ''}">
+      <div class="ver-num" aria-hidden="true">v${v.version}</div>
+      <div class="ver-body">
+        <div class="ver-date">${fmtDateTime(v.created_at)}${isCurrent ? ' · <strong>Atual</strong>' : ''}</div>
+        <div class="ver-scores">
+          ${sc != null ? `<div class="ver-score">
+            <div class="ver-score-val" style="color:${scoreColor(sc)}" aria-label="Score ${sc}">${sc}</div>
+            <div class="ver-score-lbl">Score</div>
+          </div>` : ''}
+          ${v.risk_level ? `<div class="ver-score">
+            <div class="ver-score-val" style="color:${SEV_COLOR[v.risk_level] || 'var(--text-muted)'}">${v.risk_level}</div>
+            <div class="ver-score-lbl">Risk</div>
+          </div>` : ''}
+          ${v.total_time ? `<div class="ver-score">
+            <div class="ver-score-val" style="color:var(--text-secondary)">${v.total_time.toFixed(1)}s</div>
+            <div class="ver-score-lbl">Tempo</div>
+          </div>` : ''}
+        </div>
+      </div>
+      <div class="ver-actions">
+        <button class="btn btn-ghost btn-sm" onclick="loadVersionInHub(${v.id ? `'${v.id}'` : 'null'})"
+          aria-label="Abrir versão ${v.version} no Hub">
+          ↗ Ver no Hub
+        </button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function renderDefects() {
+  const el = document.getElementById('defects-list');
+  if (!defects.length) {
+    el.innerHTML = emptyState('🐛', 'Nenhum defeito registrado', 'Clique em "+ Novo defeito" para registrar um defeito vinculado a esta história.');
+    return;
+  }
+  el.innerHTML = defects.map(d => {
+    const sevColor = SEV_COLOR[d.severity] || 'var(--text-muted)';
+    return `<article class="defect-item" aria-label="Defeito: ${d.title}">
+      <div class="defect-sev-bar" style="background:${sevColor}" aria-hidden="true"></div>
+      <div class="defect-body">
+        <div class="defect-hd">
+          <div class="defect-title">${esc(d.title)}</div>
+          <div class="defect-badges" role="list">
+            <span role="listitem" class="badge badge-${d.severity}">${d.severity}</span>
+            <span role="listitem" class="badge badge-${d.defect_type}">${TYPE_LABEL[d.defect_type] || d.defect_type}</span>
+            <span role="listitem" class="badge badge-${d.status}">${STATUS_LABEL[d.status] || d.status}</span>
+            ${d.jira_id ? `<span role="listitem" class="badge" style="background:rgba(79,143,255,.1);color:var(--m1)">${esc(d.jira_id)}</span>` : ''}
+          </div>
+        </div>
+        ${d.description ? `<div class="defect-desc">${esc(d.description)}</div>` : ''}
+        <div class="defect-meta">
+          ${d.story_version ? `<span aria-label="Encontrado na versão ${d.story_version}">v${d.story_version} encontrado</span>` : ''}
+          ${d.sprint_found  ? `<span aria-label="Sprint encontrado: ${d.sprint_found}">${esc(d.sprint_found)}</span>` : ''}
+          ${d.fixed_in_version ? `<span aria-label="Corrigido na versão ${d.fixed_in_version}">v${d.fixed_in_version} corrigido</span>` : ''}
+          ${d.sprint_fixed  ? `<span>${esc(d.sprint_fixed)}</span>` : ''}
+        </div>
+      </div>
+      <div class="defect-actions">
+        <label class="sr-only" for="status-${d.id}">Mudar status do defeito</label>
+        <select class="status-select" id="status-${d.id}"
+          onchange="updateStatus('${d.id}', this.value)"
+          aria-label="Status do defeito: ${STATUS_LABEL[d.status]}">
+          <option value="open"     ${d.status==='open'     ?'selected':''}>Aberto</option>
+          <option value="fixed"    ${d.status==='fixed'    ?'selected':''}>Corrigido</option>
+          <option value="reopened" ${d.status==='reopened' ?'selected':''}>Reaberto</option>
+          <option value="wont_fix" ${d.status==='wont_fix' ?'selected':''}>Não corrigir</option>
+        </select>
+        <button class="btn btn-danger btn-sm" onclick="deleteDefect('${d.id}')"
+          aria-label="Excluir defeito: ${esc(d.title)}">✕</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function renderLinks() {
+  const el = document.getElementById('links-content');
+  let html = '';
+
+  // Parent
+  if (family.parent_story) {
+    const p = family.parent_story;
+    html += `<div class="section-hd" style="margin-top:0">
+      <h3 class="section-title">História pai</h3>
+    </div>
+    <div class="link-item" role="link" tabindex="0"
+      onclick="goToStory('${p.parent_id}')"
+      onkeydown="if(event.key==='Enter')goToStory('${p.parent_id}')"
+      aria-label="Navegar para história pai ${p.parent_id}">
+      <span class="link-type-badge">${LINK_LABEL[p.link_type] || p.link_type}</span>
+      <span class="link-id">${esc(p.parent_id)}</span>
+      <span class="link-arrow" aria-hidden="true">↗</span>
+    </div>`;
+  }
+
+  // Children
+  const children = family.children || [];
+  if (children.length) {
+    html += `<div class="section-hd" style="margin-top:${family.parent_story?'20px':'0'}">
+      <h3 class="section-title">Melhorias vinculadas (${children.length})</h3>
+    </div>`;
+    html += children.map(c => `
+      <div class="link-item" role="link" tabindex="0"
+        onclick="goToStory('${c.child_id}')"
+        onkeydown="if(event.key==='Enter')goToStory('${c.child_id}')"
+        aria-label="Navegar para história ${c.child_id}">
+        <span class="link-type-badge">${LINK_LABEL[c.link_type] || c.link_type}</span>
+        <span class="link-id">${esc(c.child_id)}</span>
+        ${c.description ? `<span class="link-title">${esc(c.description)}</span>` : ''}
+        <span class="link-arrow" aria-hidden="true">↗</span>
+      </div>`).join('');
+  }
+
+  if (!family.parent_story && !children.length) {
+    html = emptyState('🔗', 'Nenhum vínculo', 'Esta história não tem melhorias vinculadas nem está vinculada a uma história pai.');
+  }
+
+  el.innerHTML = html;
+}
+
+function renderTraceability() {
+  const tra = window._latestTraceability;
+  const el  = document.getElementById('traceability-content');
+  if (!tra) return;
+
+  const covColor = s => s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--err)';
+
+  let html = '<div style="display:flex;flex-direction:column;gap:14px">';
+
+  // Summary card
+  html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div style="font-size:26px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage || 0)}">${tra.overall_coverage || 0}%</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${esc(tra.verdict || '')}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:2px">${esc(tra.summary || '')}</div>
+      </div>
+    </div>
+    ${tra.uncovered?.length ? `<div style="font-size:10px;font-family:var(--mono);color:var(--err);margin-top:6px">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
+  </div>`;
+
+  // RTM Table
+  if (tra.items?.length) {
+    html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px" role="grid" aria-label="Matriz de rastreabilidade">
+          <thead>
+            <tr style="border-bottom:1px solid var(--b1);background:var(--s2)">
+              <th scope="col" style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500">Requisito</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--m2)">Regras</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--m3)">Critérios</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--ok)">Cenários</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--err)">Riscos</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--warn)">Gaps</th>
+              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--text-muted)">Cob.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tra.items.map(item => {
+              const dot = item.coverage === 'full' ? 'var(--ok)' : item.coverage === 'partial' ? 'var(--warn)' : 'var(--err)';
+              return `<tr style="border-bottom:1px solid var(--b1)" tabindex="0">
+                <td style="padding:10px 14px">
+                  <div style="font-weight:700;color:var(--m3);font-size:12px">${esc(item.req_id)}</div>
+                  <div style="color:var(--text-muted);font-size:9px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.req_title)}</div>
+                </td>
+                <td style="padding:10px 12px;text-align:center;color:${item.rules.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.rules.length || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;color:${item.criteria.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.criteria.length || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;color:${item.scenarios.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.scenarios.length || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;color:${item.risks.length ? 'var(--err)' : 'var(--text-muted)'};font-weight:700">${item.risks.length || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;color:${item.gaps.length ? 'var(--warn)' : 'var(--text-muted)'};font-weight:700">${item.gaps.length || '—'}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:700;color:${dot}">${item.coverage_pct}%</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function renderKnowledge() {
+  const el = document.getElementById('knowledge-list');
+  const direct   = knowledge.direct_knowledge   || [];
+  const inherited = knowledge.inherited_knowledge || [];
+  const all = [...direct, ...inherited];
+
+  if (!all.length) {
+    el.innerHTML = emptyState('📚', 'Sem conhecimento vinculado',
+      'Entradas do Knowledge Layer serão exibidas aqui quando vinculadas a esta história ou encontradas por palavras-chave.');
+    return;
+  }
+
+  let html = '';
+  if (direct.length) {
+    html += `<div class="section-hd"><h3 class="section-title">Vinculado diretamente (${direct.length})</h3></div>`;
+    html += direct.map(k => knowledgeCard(k)).join('');
+  }
+  if (inherited.length) {
+    html += `<div class="section-hd" style="margin-top:20px"><h3 class="section-title">Herdado da história pai (${inherited.length})</h3></div>`;
+    html += inherited.map(k => knowledgeCard(k)).join('');
+  }
+  el.innerHTML = html;
+}
+
+function knowledgeCard(k) {
+  const cat   = k.category || '';
+  const color = CAT_COLOR[cat] || 'var(--text-muted)';
+  const label = CAT_LABEL[cat] || cat;
+  return `<article class="knowledge-item" aria-label="${label}: ${esc(k.title)}">
+    <div class="ki-hd">
+      <span class="ki-cat" style="color:${color}" aria-label="Categoria: ${label}">${label}</span>
+      ${k.severity ? `<span class="badge badge-${k.severity}">${k.severity}</span>` : ''}
+      <div class="ki-title">${esc(k.title)}</div>
+    </div>
+    <div class="ki-desc">${esc(k.description || '').slice(0, 300)}</div>
+    ${k.mitigation ? `<div class="ki-mit">→ ${esc(k.mitigation).slice(0,200)}</div>` : ''}
+  </article>`;
+}
+
+function updateCounts() {
+  document.getElementById('cnt-versions').textContent  = versions.length;
+  document.getElementById('cnt-defects').textContent   = defects.length;
+  const links = (family.children || []).length + (family.parent_story ? 1 : 0);
+  document.getElementById('cnt-links').textContent     = links;
+  const kTotal = (knowledge.direct_knowledge || []).length + (knowledge.inherited_knowledge || []).length;
+  document.getElementById('cnt-knowledge').textContent = kTotal;
+  const traItems = window._latestTraceability?.items?.length || 0;
+  document.getElementById('cnt-traceability').textContent = traItems;
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.setAttribute('aria-selected', 'false');
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.remove('active');
+    p.hidden = true;
+  });
+  btn.setAttribute('aria-selected', 'true');
+  const panel = document.getElementById('tab-' + name);
+  panel.classList.add('active');
+  panel.hidden = false;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DEFECTS
+// ══════════════════════════════════════════════════════════════
+function openDefectModal() {
+  document.getElementById('defect-overlay').classList.add('open');
+  document.getElementById('d-title').focus();
+}
+
+function closeDefectModal() {
+  document.getElementById('defect-overlay').classList.remove('open');
+  ['d-jira','d-version','d-title','d-desc','d-evidence','d-sprint-found'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('d-severity').value = '';
+  document.getElementById('d-type').value     = '';
+  document.getElementById('d-status').value   = 'open';
+}
+
+async function saveDefect() {
+  const title    = document.getElementById('d-title').value.trim();
+  const severity = document.getElementById('d-severity').value;
+  const type     = document.getElementById('d-type').value;
+  if (!title || !severity || !type) {
+    toast('Preencha título, severidade e tipo', 'var(--err)');
+    return;
+  }
+  const body = {
+    story_id:       storyId,
+    jira_id:        document.getElementById('d-jira').value.trim() || null,
+    story_version:  parseInt(document.getElementById('d-version').value) || null,
+    title,
+    description:    document.getElementById('d-desc').value.trim() || null,
+    severity,
+    defect_type:    type,
+    status:         document.getElementById('d-status').value,
+    sprint_found:   document.getElementById('d-sprint-found').value.trim() || null,
+    evidence:       document.getElementById('d-evidence').value.trim() || null,
+  };
+  try {
+    const r = await fetch(`${API()}/api/v1/defects`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const created = await r.json();
+    defects.unshift(created);
+    renderDefects();
+    renderHeader();
+    updateCounts();
+    closeDefectModal();
+    toast('Defeito registrado', 'var(--ok)');
+  } catch(e) { toast('Erro: ' + e.message, 'var(--err)'); }
+}
+
+async function updateStatus(defectId, status) {
+  try {
+    const r = await fetch(`${API()}/api/v1/defects/${defectId}/status`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const updated = await r.json();
+    defects = defects.map(d => d.id === defectId ? updated : d);
+    renderHeader();
+    updateCounts();
+    toast('Status atualizado', 'var(--ok)');
+  } catch(e) { toast('Erro: ' + e.message, 'var(--err)'); }
+}
+
+async function deleteDefect(defectId) {
+  const d = defects.find(x => x.id === defectId);
+  if (!d) return;
+  if (!confirm(`Excluir defeito "${d.title}"?`)) return;
+  try {
+    const r = await fetch(`${API()}/api/v1/defects/${defectId}`, { method:'DELETE' });
+    if (!r.ok) throw new Error(await r.text());
+    defects = defects.filter(x => x.id !== defectId);
+    renderDefects();
+    renderHeader();
+    updateCounts();
+    toast('Defeito excluído', 'var(--warn)');
+  } catch(e) { toast('Erro: ' + e.message, 'var(--err)'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LINKS
+// ══════════════════════════════════════════════════════════════
+function openLinkModal() {
+  document.getElementById('link-overlay').classList.add('open');
+  document.getElementById('link-child-id').focus();
+}
+
+function closeLinkModal() {
+  document.getElementById('link-overlay').classList.remove('open');
+  document.getElementById('link-child-id').value = '';
+  document.getElementById('link-desc').value = '';
+  document.getElementById('link-search-results').innerHTML = '';
+}
+
+async function searchLinkStories(q) {
+  const el = document.getElementById('link-search-results');
+  if (!q || q.length < 3) { el.innerHTML = ''; return; }
+  try {
+    const r = await fetch(`${API()}/api/v1/history?limit=50`);
+    if (!r.ok) return;
+    const history = await r.json();
+    const matches = history.filter(h =>
+      (h.story_id || '').toLowerCase().includes(q.toLowerCase()) ||
+      (h.requirement || '').toLowerCase().includes(q.toLowerCase())
+    ).slice(0, 5);
+    if (!matches.length) { el.innerHTML = '<div class="f-hint" style="padding:6px 0">Nenhuma história encontrada</div>'; return; }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">` +
+      matches.map(h => `
+        <button class="btn btn-ghost btn-sm" style="justify-content:flex-start;text-align:left"
+          onclick="selectLinkStory('${h.story_id || ''}')"
+          aria-label="Selecionar história ${h.story_id || 'sem ID'}">
+          <span style="color:var(--m1);font-family:var(--mono)">${h.story_id || '—'}</span>
+          <span style="color:var(--text-muted);font-size:10px;margin-left:6px">
+            ${(h.requirement || '').split('\n')[0].slice(0, 50)}
+          </span>
+        </button>`).join('') + '</div>';
+  } catch(e) {}
+}
+
+function selectLinkStory(id) {
+  document.getElementById('link-child-id').value = id;
+  document.getElementById('link-search-results').innerHTML = '';
+}
+
+async function saveLink() {
+  const childId = document.getElementById('link-child-id').value.trim().toUpperCase();
+  if (!childId) { toast('Informe o ID da história', 'var(--err)'); return; }
+  if (childId === storyId) { toast('Não é possível vincular a história a ela mesma', 'var(--err)'); return; }
+  const body = {
+    parent_id:   storyId,
+    child_id:    childId,
+    link_type:   document.getElementById('link-type').value,
+    description: document.getElementById('link-desc').value.trim() || null,
+  };
+  try {
+    const r = await fetch(`${API()}/api/v1/story-links`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    // Reload family
+    const famR = await fetch(`${API()}/api/v1/stories/${storyId}/family`);
+    family = famR.ok ? await famR.json() : {};
+    renderLinks();
+    renderHeader();
+    updateCounts();
+    closeLinkModal();
+    toast(`${childId} vinculada`, 'var(--ok)');
+  } catch(e) { toast('Erro: ' + e.message, 'var(--err)'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function goToStory(id) {
+  window.location.href = `story.html?id=${encodeURIComponent(id)}`;
+}
+
+async function loadVersionInHub(analysisId) {
+  if (!analysisId) { toast('ID da análise não disponível', 'var(--warn)'); return; }
+  try {
+    const r = await fetch(`${API()}/api/v1/history/${analysisId}`);
+    if (!r.ok) throw new Error('Análise não encontrada');
+    const data = await r.json();
+    if (data.result) {
+      const state = {
+        requirement: data.requirement || '',
+        lastResult:  data.result,
+      };
+      localStorage.setItem('qa_state', JSON.stringify(state));
+      window.location.href = 'index.html';
+    }
+  } catch(e) { toast('Erro: ' + e.message, 'var(--err)'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function fmtDateTime(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+function emptyState(icon, title, sub) {
+  return `<div class="empty" role="status">
+    <div class="empty-icon" aria-hidden="true">${icon}</div>
+    <div class="empty-title">${title}</div>
+    <div class="empty-sub">${sub}</div>
+  </div>`;
+}
+function showError(msg) {
+  document.getElementById('loading-state').innerHTML =
+    `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">Erro</div><div class="empty-sub">${msg}</div></div>`;
+}
+
+let toastT;
+function toast(msg, color = 'var(--ok)') {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-dot').style.background = color;
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Keyboard navigation ───────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDefectModal();
+    closeLinkModal();
+  }
+});
+
+// ── Screen reader only utility class ─────────────────────────
+const style = document.createElement('style');
+style.textContent = '.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
