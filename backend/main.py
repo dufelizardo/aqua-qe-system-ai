@@ -401,7 +401,13 @@ async def generate_artifacts(body: ArtifactRequest):
     tra          = safe_parse(TraceabilityResult,     result_data.get("traceability"))
     synth        = safe_parse(SynthesisResult,        result_data.get("synthesis"))
     knowledge    = result_data.get("knowledge")
-    story_id     = result_data.get("normalized", {}).get("original", "")
+
+    # Parse inference if available
+    try:
+        from models.schemas import InferenceResult
+        inf = safe_parse(InferenceResult, result_data.get("inference"))
+    except Exception:
+        inf = None
 
     if not normalized:
         raise HTTPException(status_code=422, detail="Normalized data missing from analysis")
@@ -415,6 +421,7 @@ async def generate_artifacts(body: ArtifactRequest):
         gap=gap,
         coverage=cov,
         traceability=tra,
+        inference=inf,
         synthesis=synth,
         knowledge=knowledge,
         provider=provider,

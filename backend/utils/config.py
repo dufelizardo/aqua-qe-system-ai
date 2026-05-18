@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     AI_MODEL:      str = "claude-sonnet-4-20250514"
     AI_API_KEY:    str = ""
     AI_BASE_URL:   str | None = None   # corporate proxy endpoint
+    BASE_URL:      str | None = None   # alias — used when AI_BASE_URL not set
 
     # FastAPI
     APP_ENV:    str = "development"
@@ -29,6 +30,11 @@ class Settings(BaseSettings):
 
     # Database
     DB_PATH: str = "qa_system.db"
+
+    @property
+    def effective_base_url(self) -> str | None:
+        """Returns AI_BASE_URL if set, otherwise BASE_URL."""
+        return self.AI_BASE_URL or self.BASE_URL
 
     class Config:
         env_file = ".env"

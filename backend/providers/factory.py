@@ -9,7 +9,7 @@ from .base      import BaseProvider
 from .anthropic import AnthropicProvider
 from .openai    import OpenAIProvider
 from .gemini    import GeminiProvider
-from .corporate import CorporateProvider
+from .b3gpt     import B3GPTProvider
 
 
 @lru_cache(maxsize=1)
@@ -28,11 +28,12 @@ def get_provider() -> BaseProvider:
             model=settings.AI_MODEL,
             base_url=settings.AI_BASE_URL,
         )
-    elif provider == "openai":
-        return OpenAIProvider(
+    elif provider in ("openai", "b3gpt"):
+        return B3GPTProvider(
             api_key=settings.AI_API_KEY,
             model=settings.AI_MODEL,
-            base_url=settings.AI_BASE_URL,
+            base_url=settings.effective_base_url or "https://api-b3gpt.b3.com.br/internal-api/b3gpt-llms/v1/openai",
+            timeout=int(settings.ENGINE_TIMEOUT),
         )
     elif provider == "gemini":
         return GeminiProvider(
@@ -40,14 +41,8 @@ def get_provider() -> BaseProvider:
             model=settings.AI_MODEL,
             base_url=settings.AI_BASE_URL,
         )
-    elif provider == "corporate":
-        return CorporateProvider(
-            api_key=settings.AI_API_KEY,
-            model=settings.AI_MODEL,
-            base_url=settings.AI_BASE_URL or "",
-        )
     else:
         raise ValueError(
             f"Unknown AI_PROVIDER='{provider}'. "
-            f"Valid options: anthropic | openai | gemini | corporate"
+            f"Valid options: anthropic | openai | b3gpt | gemini"
         )
