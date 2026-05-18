@@ -4,11 +4,14 @@ Stage 1: Normalizer Engine
 
 Converts raw requirement text into a structured NormalizedRequirement.
 This output feeds ALL parallel engines — so everyone analyzes the same thing.
+
+Now includes structured RN/CA extraction via requirement_parser.
 """
 
 from models.schemas import NormalizedRequirement
 from providers.base  import BaseProvider, CompletionRequest
 from utils.parser    import extract_json, safe_int
+from utils.requirement_parser import parse_requirements, get_rns, get_cas
 
 SYSTEM_PROMPT = """You are a Requirements Normalization Engine for a QA system.
 Your job: parse a raw requirement into structured JSON.
@@ -57,6 +60,11 @@ async def run(
 
     data = extract_json(response.content)
 
+    # ── Structured RN/CA extraction (no AI needed — pure regex parser) ────────
+    parsed = parse_requirements(requirement)
+    rns    = get_rns(parsed)
+    cas    = get_cas(parsed)
+
     return NormalizedRequirement(
         original=requirement,
         normalized=data.get("normalized", requirement),
@@ -67,4 +75,6 @@ async def run(
         constraints=data.get("constraints", []),
         keywords=data.get("keywords", []),
         complexity=data.get("complexity", "medium"),
+        rns=rns,
+        cas=cas,
     )

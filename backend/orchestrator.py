@@ -174,6 +174,10 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             rules=rules_result,
             gap=gap_result,
             coverage=cov_result,
+            knowledge=ka_result.to_dict() if ka_result else None,
+            provider=provider,
+            max_tokens=min(settings.ENGINE_MAX_TOKENS * 2, 8000),
+            language=settings.ENGINE_LANGUAGE,
             requirement=request.requirement,
             project_id=request.project_id,
         )
@@ -252,6 +256,18 @@ async def analyze(request: AnalysisRequest) -> AnalysisResponse:
             project_id=request.project_id,
             provider=provider.provider_name,
             model=provider.model_name,
+        )
+    except Exception:
+        pass
+
+    # ── Knowledge Layer 3c: Auto-enrichment ──────────────────────────────────
+    # Learns from this analysis — saves patterns to KB automatically
+    try:
+        import engines.knowledge_enricher as enricher
+        await enricher.enrich(
+            result=response,
+            story_id=detected_id if 'detected_id' in dir() else None,
+            project_id=request.project_id,
         )
     except Exception:
         pass

@@ -467,3 +467,132 @@ async def get_artifacts(analysis_id: str, profile: Optional[str] = None):
         items = [a for a in items if a.get("profile") == profile]
 
     return {"analysis_id": analysis_id, "total": len(items), "artifacts": items}
+
+
+# ── Knowledge Layer 3c ────────────────────────────────────────────────────────
+@app.get("/api/v1/knowledge/stats")
+async def knowledge_stats(project_id: Optional[str] = None):
+    """Knowledge base statistics — what the system has learned."""
+    entries = knowledge_repo.list(project_id=project_id)
+    auto    = [e for e in entries if "auto-extracted" in (e.get("tags") or [])]
+
+    # Confidence distribution
+    high_conf = []
+    for e in auto:
+        tags = e.get("tags", [])
+        conf_tag = next((t for t in tags if t.startswith("confidence:")), None)
+        if conf_tag:
+            conf = float(conf_tag.split(":")[1])
+            if conf >= 0.7:
+                high_conf.append(e)
+
+    by_category = {}
+    for e in entries:
+        cat = e.get("category", "other")
+        by_category[cat] = by_category.get(cat, 0) + 1
+
+    return {
+        "total":           len(entries),
+        "auto_extracted":  len(auto),
+        "manual":          len(entries) - len(auto),
+        "high_confidence": len(high_conf),
+        "by_category":     by_category,
+    }
+
+
+@app.post("/api/v1/knowledge/search/semantic")
+async def semantic_search(body: dict):
+    """Semantic search over the knowledge base."""
+    query      = body.get("query", "")
+    engine     = body.get("engine", "normalizer")
+    project_id = body.get("project_id")
+    if not query:
+        raise HTTPException(status_code=400, detail="query required")
+    try:
+        from utils.semantic_search import search_kb
+        results = search_kb(query=query, engine=engine,
+                            project_id=project_id, top_k=10)
+        return {"query": query, "engine": engine, "results": results, "total": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Version Delta ─────────────────────────────────────────────────────────────
+from utils.version_delta import compute_delta, propagate_impact
+
+@app.get("/api/v1/stories/{story_id}/delta")
+async def get_version_delta(story_id: str, v_from: int = None, v_to: int = None):
+    """
+    Compute delta between two versions of a story.
+    Defaults to comparing latest vs previous.
+    """
+    from repositories.analysis import AnalysisRepository
+    repo = AnalysisRepository()
+    versions = repo.list_by_story_id(story_id)
+
+    if len(versions) < 2:
+        return {"has_changes": False, "summary": "Apenas uma versão disponível"}
+
+    # Sort by version ascending
+    versions_sorted = sorted(versions, key=lambda x: x.get("version", 0))
+
+    if v_from is None or v_to is None:
+        # Default: compare last two
+        v_old = versions_sorted[-2]
+        v_new = versions_sorted[-1]
+    else:
+        v_old = next((v for v in versions_sorted if v.get("version") == v_from), None)
+        v_new = next((v for v in versions_sorted if v.get("version") == v_to),   None)
+
+    if not v_old or not v_new:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    delta = compute_delta(
+        old_text=v_old.get("requirement", ""),
+        new_text=v_new.get("requirement", ""),
+        story_id=story_id,
+        v_from=v_old.get("version", 0),
+        v_to=v_new.get("version", 0),
+    )
+
+    return delta.to_dict()
+
+
+@app.get("/api/v1/stories/{story_id}/impact")
+async def get_impact_analysis(story_id: str, v_from: int = None, v_to: int = None):
+    """
+    Full impact analysis: delta + propagation to affected tests/automations.
+    """
+    from repositories.analysis import AnalysisRepository
+    repo = AnalysisRepository()
+    versions = repo.list_by_story_id(story_id)
+
+    if len(versions) < 2:
+        return {"re_analysis_needed": False, "summary": "Apenas uma versão disponível"}
+
+    versions_sorted = sorted(versions, key=lambda x: x.get("version", 0))
+    v_old = versions_sorted[-2] if v_from is None else next((v for v in versions_sorted if v.get("version") == v_from), None)
+    v_new = versions_sorted[-1] if v_to   is None else next((v for v in versions_sorted if v.get("version") == v_to),   None)
+
+    if not v_old or not v_new:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    delta = compute_delta(
+        old_text=v_old.get("requirement", ""),
+        new_text=v_new.get("requirement", ""),
+        story_id=story_id,
+        v_from=v_old.get("version", 0),
+        v_to=v_new.get("version", 0),
+    )
+
+    # Get traceability from latest analysis for propagation
+    latest_full = analysis_repo.get(v_new.get("id", ""))
+    tra_items = []
+    if latest_full and latest_full.get("result"):
+        tra = latest_full["result"].get("traceability", {})
+        tra_items = tra.get("items", []) if tra else []
+
+    impact = propagate_impact(delta, tra_items)
+    impact["delta"] = delta.to_dict()
+
+    return impact

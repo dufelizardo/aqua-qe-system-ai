@@ -52,6 +52,9 @@ class NormalizedRequirement(BaseModel):
     constraints:    list[str]      # limits, rules, non-functionals
     keywords:       list[str]      # domain keywords for context
     complexity:     Literal["low", "medium", "high"]
+    # Structured extraction — populated by requirement_parser
+    rns:            dict = {}      # {"RN-01": "full description text", ...}
+    cas:            dict = {}      # {"CA-01": "full description text", ...}
 
 
 # ── Per-engine findings ──────────────────────────────────────────────────────
@@ -148,25 +151,30 @@ class EngineTimings(BaseModel):
 
 class TraceabilityItem(BaseModel):
     """A single traceability link between requirement and another artifact."""
-    req_id:      str
-    req_title:   str
-    rules:       list[str] = []
-    criteria:    list[str] = []
-    scenarios:   list[str] = []
-    risks:       list[str] = []
-    gaps:        list[str] = []
-    coverage:    str = "none"   # full | partial | none
+    req_id:       str
+    req_title:    str
+    rules:        list[str] = []
+    criteria:     list[str] = []
+    scenarios:    list[str] = []
+    risks:        list[str] = []
+    gaps:         list[str] = []
+    coverage:     str = "none"   # full | partial | none
     coverage_pct: int = 0
 
 
 class TraceabilityResult(BaseModel):
-    engine:          str = "traceability"
-    status:          EngineStatus = EngineStatus.DONE
-    items:           list[TraceabilityItem] = []
-    overall_coverage: int = 0          # 0-100
-    uncovered:       list[str] = []    # req IDs with no links
-    summary:         str = ""
-    verdict:         str = ""
+    engine:           str = "traceability"
+    status:           EngineStatus = EngineStatus.DONE
+    items:            list[TraceabilityItem] = []
+    overall_coverage: int = 0
+    uncovered:        list[str] = []
+    summary:          str = ""
+    verdict:          str = ""
+    # v2 rich fields
+    scenarios:        list[dict] = []
+    test_cases:       list[dict] = []
+    coverage_detail:  dict = {}
+    impact_analysis:  dict = {}
 
 
 class ArtifactItem(BaseModel):

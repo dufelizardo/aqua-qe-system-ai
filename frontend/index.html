@@ -9,6 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
+  font-size:14px; /* base for rem units */
   --bg:#060810; --s1:#090c14; --s2:#0d1120; --s3:#111829; --s4:#162035;
   --b1:#1a2840; --b2:#22334f; --b3:#2c4268;
   --muted:#324e70; --soft:#476898; --body:#6a8fb0;
@@ -73,12 +74,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--body);}
 /* grid of module cards */
 .hub-grid{
   display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  grid-template-rows:auto auto;
-  gap:20px;
-  padding:32px 40px;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  padding:24px 32px;
   height:100%;overflow-y:auto;
   align-content:start;
+  max-width:2400px;
+  margin:0 auto;
+  width:100%;
 }
 .hub-grid::-webkit-scrollbar{width:5px;}
 .hub-grid::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
@@ -182,7 +185,7 @@ textarea.rw-ta::placeholder{color:var(--muted);}
   font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;
 }
 .mc-info{flex:1;}
-.mc-name{font-size:14px;font-weight:600;color:var(--white);margin-bottom:2px;}
+.mc-name{font-size:13px;font-weight:600;color:var(--white);margin-bottom:2px;line-height:1.3;}
 .mc-sub{font-size:9px;font-family:var(--mono);color:var(--muted);}
 .mc-score{
   font-size:22px;font-family:var(--mono);font-weight:700;
@@ -429,33 +432,84 @@ textarea.rw-ta::placeholder{color:var(--muted);}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ── RESPONSIVE ── */
-@media(max-width:768px){
-  .hub-grid{grid-template-columns:1fr 1fr;padding:16px 12px;}
-  .hub-hero{gap:12px;}
+
+/* ── RESPONSIVE — ultrawide first ── */
+
+/* Ultrawide 2560px+ */
+@media(min-width:1920px){
+  .hub-grid{grid-template-columns:repeat(3,1fr);gap:20px;padding:32px 48px;}
+  .hub-title{font-size:34px;}
+  .module-cards{grid-template-columns:repeat(5,1fr);}
+  .req-input-wrap{max-width:780px;}
+  .pipeline-vis{max-width:900px;}
+}
+
+/* Large desktop 1440-1919px */
+@media(max-width:1919px) and (min-width:1440px){
+  .hub-grid{grid-template-columns:repeat(3,1fr);gap:18px;padding:28px 40px;}
+  .hub-title{font-size:30px;}
+  .module-cards{grid-template-columns:repeat(5,1fr);}
+}
+
+/* Standard desktop 1280-1439px */
+@media(max-width:1439px) and (min-width:1280px){
+  .hub-grid{grid-template-columns:repeat(3,1fr);gap:14px;padding:24px 32px;}
+  .hub-title{font-size:26px;}
+  .module-cards{grid-template-columns:repeat(5,1fr);}
+}
+
+/* Laptop 1024-1279px */
+@media(max-width:1279px) and (min-width:1024px){
+  .hub-grid{grid-template-columns:1fr 1fr 1fr;gap:12px;padding:20px 24px;}
+  .hub-title{font-size:24px;}
+  .module-cards{grid-template-columns:repeat(3,1fr);}
+  .flow-bar{overflow-x:auto;}
+  .ts-req{max-width:200px;}
+}
+
+/* Small laptop / tablet landscape 768-1023px */
+@media(max-width:1023px) and (min-width:768px){
+  .hub-grid{grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px;}
   .hub-title{font-size:22px;}
+  .module-cards{grid-template-columns:1fr 1fr;}
+  .pipeline-vis{overflow-x:auto;}
+  .flow-bar{overflow-x:auto;padding:8px 12px;}
+  .topbar{padding:0 14px;}
+  .ts-req{max-width:180px;}
+  .hist-drawer{width:380px;}
+  .synth-card .sc-body{grid-template-columns:1fr;}
+}
+
+/* Tablet portrait 480-767px */
+@media(max-width:767px){
+  .hub-grid{grid-template-columns:1fr;padding:12px;}
+  .hub-title{font-size:20px;}
   .hub-sub{font-size:10px;}
-  .pipeline-vis{padding:10px 12px;gap:0;overflow-x:auto;}
-  .pipe-node{padding:6px 8px;min-width:60px;}
-  .pipe-label{font-size:7px;}
-  .flow-bar{padding:8px 12px;overflow-x:auto;}
-  .flow-step{padding:4px 10px;}
-  .flow-label{font-size:7px;}
+  .pipeline-vis{overflow-x:auto;padding:10px;}
+  .flow-bar{overflow-x:auto;padding:8px;}
   .module-cards{grid-template-columns:1fr 1fr;}
   .synth-card .sc-body{grid-template-columns:1fr;}
   .topbar{padding:0 12px;}
-  .tb-name{font-size:11px;}
   .tb-version{display:none;}
-  .ts-req{max-width:160px;}
+  .ts-req{max-width:140px;}
   .hist-drawer{width:100%;}
-  .mo-body{padding:16px 14px;}
-  .rp-engines{grid-template-columns:repeat(3,1fr);}
+  .mo-body{padding:14px 12px;}
 }
-@media(max-width:480px){
-  .hub-grid{grid-template-columns:1fr;}
+
+/* Mobile 480px */
+@media(max-width:479px){
+  .hub-grid{grid-template-columns:1fr;padding:10px;}
   .module-cards{grid-template-columns:1fr;}
-  .rp-engines{grid-template-columns:repeat(2,1fr);}
   .sc-body{grid-template-columns:1fr!important;}
   .flow-bar{display:none;}
+  .pipeline-vis{display:none;}
+}
+
+/* Accessibility zoom 150-200% (viewport shrinks) */
+@media(max-width:800px) and (min-width:480px){
+  .hub-grid{grid-template-columns:1fr 1fr;}
+  .module-cards{grid-template-columns:1fr 1fr;}
+  .tb-version{display:none;}
 }
 </style>
 </head>
@@ -1117,64 +1171,180 @@ function buildTraceabilityContent(result) {
   if (!tra) return '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">Nenhum dado de rastreabilidade. Execute uma análise.</div>';
 
   const covColor = s => s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--err)';
+  const prioColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+  const typeColor = {positive:'var(--ok)',negative:'var(--err)',boundary:'var(--warn)',alternative:'var(--m3)'};
+  const typeLabel = {positive:'Positivo',negative:'Negativo',boundary:'Boundary',alternative:'Alternativo'};
+
   let html = '<div style="display:flex;flex-direction:column;gap:14px">';
 
-  // Executive summary
+  // ── Executive summary ─────────────────────────────────────────────────────
+  const cov = tra.coverage_detail || {};
   html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-      <div style="font-size:28px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage)}">${tra.overall_coverage}%</div>
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--white)">${tra.verdict || 'Análise de rastreabilidade'}</div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px">${tra.summary || ''}</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="font-size:28px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage||0)}">${tra.overall_coverage||0}%</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--white)">${escHist(tra.verdict||'')}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px">${escHist(tra.summary||'')}</div>
       </div>
     </div>
-    ${tra.uncovered?.length ? `<div style="font-size:10px;font-family:var(--mono);color:var(--err)">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px">
+      ${['functional','security','performance','compliance','usability'].map(cat => {
+        const pct = cov.by_category?.[cat] ?? '—';
+        return `<div style="text-align:center;background:var(--s3);border-radius:5px;padding:7px">
+          <div style="font-size:13px;font-family:var(--mono);font-weight:700;color:${typeof pct==='number'?covColor(pct):'var(--muted)'}">${typeof pct==='number'?pct+'%':pct}</div>
+          <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-top:2px">${cat}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;font-size:10px;font-family:var(--mono);flex-wrap:wrap">
+      <span style="color:var(--ok)">✓ ${cov.positive_scenarios||0} positivos</span>
+      <span style="color:var(--err)">✗ ${cov.negative_scenarios||0} negativos</span>
+      <span style="color:var(--m1)">⚡ ${cov.automated_pct||0}% automatizável</span>
+      <span style="color:var(--muted)">${cov.total_scenarios||0} cenários total</span>
+    </div>
+    ${tra.uncovered?.length ? `<div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--err)">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
+    ${cov.missing_scenarios?.length ? `<div style="margin-top:4px;font-size:10px;font-family:var(--mono);color:var(--warn)">Cenários faltando: ${cov.missing_scenarios.slice(0,2).join(' · ')}</div>` : ''}
   </div>`;
 
-  // RTM Table
-  if (tra.items?.length) {
+  // ── Scenarios ─────────────────────────────────────────────────────────────
+  const scenarios = tra.scenarios || [];
+  if (scenarios.length) {
     html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
       <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m3);text-transform:uppercase;letter-spacing:.08em">
-        Matriz de Rastreabilidade (RTM)
+        Cenários de Teste (${scenarios.length})
+      </div>
+      ${scenarios.map(sc => `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--b1)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3)">${escHist(sc.id)}</span>
+            <span style="font-size:9px;font-family:var(--mono);padding:1px 8px;border-radius:8px;
+              background:rgba(0,0,0,.2);color:${typeColor[sc.type]||'var(--muted)'}">${typeLabel[sc.type]||sc.type}</span>
+            <span style="font-size:9px;font-family:var(--mono);padding:1px 8px;border-radius:8px;
+              background:rgba(0,0,0,.2);color:${prioColor[sc.priority]||'var(--muted)'}">${sc.priority}</span>
+            ${sc.automated?`<span style="font-size:8px;font-family:var(--mono);color:var(--ok)">⚡ ${escHist(sc.automation_type||'auto')}</span>`:'<span style="font-size:8px;font-family:var(--mono);color:var(--muted)">manual</span>'}
+            <div style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">
+              ${[...(sc.origin_rn||[]),...(sc.origin_ca||[])].map(id=>`<span style="font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:var(--s4);border:1px solid var(--b1);color:var(--muted)">${escHist(id)}</span>`).join('')}
+              ${sc.origin_risk?`<span style="font-size:8px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:rgba(255,82,82,.08);border:1px solid rgba(255,82,82,.2);color:var(--err)">${escHist(sc.origin_risk)}</span>`:''}
+            </div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--white);margin-bottom:4px">${escHist(sc.title)}</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--soft);margin-bottom:6px">${escHist(sc.description||'')}</div>
+          ${sc.steps?.length?`<div style="background:var(--s3);border-radius:5px;padding:8px 10px">
+            ${sc.steps.map(s=>`<div style="font-size:10px;font-family:var(--mono);color:var(--body);padding:2px 0">${escHist(s)}</div>`).join('')}
+            <div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:5px;padding-top:5px;border-top:1px solid var(--b1)">→ ${escHist(sc.expected_result||'')}</div>
+          </div>`:''}
+          ${sc.historical_note?`<div style="margin-top:5px;font-size:9px;font-family:var(--mono);color:var(--m5)">📚 ${escHist(sc.historical_note)}</div>`:''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  // ── Test Cases ───────────────────────────────────────────────────────────
+  const test_cases = tra.test_cases || [];
+  if (test_cases.length) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m1);text-transform:uppercase;letter-spacing:.08em">
+        Casos de Teste (${test_cases.length})
+      </div>
+      ${test_cases.map(ct => {
+        const rns = ct.rns || [];
+        const cas = ct.cas || [];
+        const rn_desc = ct.rn_descriptions || {};
+        const ca_desc = ct.ca_descriptions || {};
+        return `<div style="padding:14px 16px;border-bottom:1px solid var(--b1)">
+          <div style="font-size:12px;font-weight:700;color:var(--white);font-family:var(--mono);margin-bottom:10px">
+            ${escHist(ct.title || ct.id)}
+          </div>
+          ${rns.length ? `<div style="margin-bottom:8px">
+            ${rns.map(rn => `<div style="display:flex;gap:8px;padding:5px 10px;background:var(--s3);border-radius:5px;margin-bottom:4px;border-left:3px solid var(--m2)">
+              <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m2);white-space:nowrap">${escHist(rn)}</span>
+              <span style="font-size:10px;font-family:var(--mono);color:var(--soft)">${escHist(rn_desc[rn] || '')}</span>
+            </div>`).join('')}
+          </div>` : ''}
+          ${cas.length ? `<div style="margin-bottom:8px">
+            ${cas.map(ca => `<div style="display:flex;gap:8px;padding:5px 10px;background:var(--s3);border-radius:5px;margin-bottom:4px;border-left:3px solid var(--m3)">
+              <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3);white-space:nowrap">${escHist(ca)}</span>
+              <span style="font-size:10px;font-family:var(--mono);color:var(--soft)">${escHist(ca_desc[ca] || '')}</span>
+            </div>`).join('')}
+          </div>` : ''}
+          ${ct.preconditions?.length ? `<div style="margin-bottom:6px">
+            <div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-bottom:3px">Pré-condições:</div>
+            ${ct.preconditions.map(p => `<div style="font-size:10px;font-family:var(--mono);color:var(--body);padding:1px 0">• ${escHist(p)}</div>`).join('')}
+          </div>` : ''}
+          ${ct.steps?.length ? `<div style="background:var(--s3);border-radius:5px;padding:8px 10px;margin-bottom:6px">
+            <div style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-bottom:4px">Passos:</div>
+            ${ct.steps.map(s => `<div style="font-size:10px;font-family:var(--mono);color:var(--body);padding:2px 0">${escHist(s)}</div>`).join('')}
+            <div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:6px;padding-top:6px;border-top:1px solid var(--b1)">→ ${escHist(ct.expected_result || '')}</div>
+          </div>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:9px;font-family:var(--mono)">
+            <span style="color:${prioColor[ct.priority]||'var(--muted)'}">${ct.priority||'—'}</span>
+            ${ct.automated ? `<span style="color:var(--ok)">⚡ ${escHist(ct.automation_type||'auto')}</span>` : '<span style="color:var(--muted)">manual</span>'}
+            ${(ct.tags||[]).map(t => `<span style="padding:1px 6px;border-radius:3px;background:var(--s4);border:1px solid var(--b1);color:var(--muted)">${escHist(t)}</span>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // ── RTM Table ─────────────────────────────────────────────────────────────
+  const rtmRows = tra.coverage_detail?._rtm || tra.__rtm__ || [];
+  // Build RTM from test_cases if raw rtm not available
+  const rtmData = rtmRows.length ? rtmRows : (tra.test_cases || []).map(ct => ({
+    test_id:   ct.id,
+    rn:        (ct.rns||[])[0] || '—',
+    ca:        (ct.cas||[])[0] || '—',
+    title:     ct.title || '',
+    risk:      (ct.risks||[])[0] || '',
+    gap:       (ct.gaps||[])[0] || '',
+    priority:  ct.priority || 'medium',
+    automated: ct.automated !== false,
+  }));
+
+  if (rtmData.length) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m3);text-transform:uppercase;letter-spacing:.08em">
+        RTM — Matriz de Rastreabilidade (${rtmData.length} entradas)
       </div>
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px">
+        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px" role="grid" aria-label="Matriz de Rastreabilidade">
           <thead>
-            <tr style="border-bottom:1px solid var(--b1)">
-              <th style="padding:8px 12px;text-align:left;color:var(--muted);font-weight:500;white-space:nowrap">Requisito</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Regras</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Critérios</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Cenários</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Riscos</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Gaps</th>
-              <th style="padding:8px 12px;text-align:center;color:var(--muted);font-weight:500">Cob.</th>
+            <tr style="border-bottom:2px solid var(--b2);background:var(--s3)">
+              <th scope="col" style="padding:9px 12px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap;font-size:9px;text-transform:uppercase;letter-spacing:.06em">ID do Teste</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--m2);font-weight:600;font-size:9px;text-transform:uppercase">RN</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--m3);font-weight:600;font-size:9px;text-transform:uppercase">CA</th>
+              <th scope="col" style="padding:9px 10px;text-align:left;color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase">Título do Caso de Teste</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--err);font-weight:600;font-size:9px;text-transform:uppercase">Risco</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--warn);font-weight:600;font-size:9px;text-transform:uppercase">Gap</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--muted);font-weight:600;font-size:9px;text-transform:uppercase">Prioridade</th>
+              <th scope="col" style="padding:9px 10px;text-align:center;color:var(--ok);font-weight:600;font-size:9px;text-transform:uppercase">Automatizável</th>
             </tr>
           </thead>
           <tbody>
-            ${tra.items.map(item => {
-              const dot = item.coverage === 'full' ? '#4caf8a' : item.coverage === 'partial' ? '#ffab40' : '#ff5252';
-              return `<tr style="border-bottom:1px solid var(--b1)">
-                <td style="padding:8px 12px;color:var(--bright);white-space:nowrap">
-                  <div style="font-weight:700;color:var(--m3)">${item.req_id}</div>
-                  <div style="color:var(--muted);font-size:9px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.req_title}</div>
+            ${rtmData.map(row => {
+              const prioColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+              return `<tr style="border-bottom:1px solid var(--b1)" tabindex="0">
+                <td style="padding:8px 12px;white-space:nowrap">
+                  <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3)">${escHist(row.test_id||'')}</span>
                 </td>
-                <td style="padding:8px 12px;text-align:center;color:${item.rules.length ? 'var(--ok)' : 'var(--muted)'}">
-                  ${item.rules.length || '—'}
+                <td style="padding:8px 10px;text-align:center">
+                  <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m2)">${escHist(row.rn||'—')}</span>
                 </td>
-                <td style="padding:8px 12px;text-align:center;color:${item.criteria.length ? 'var(--ok)' : 'var(--muted)'}">
-                  ${item.criteria.length || '—'}
+                <td style="padding:8px 10px;text-align:center">
+                  <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3)">${escHist(row.ca||'—')}</span>
                 </td>
-                <td style="padding:8px 12px;text-align:center;color:${item.scenarios.length ? 'var(--ok)' : 'var(--muted)'}">
-                  ${item.scenarios.length || '—'}
+                <td style="padding:8px 10px;max-width:320px">
+                  <span style="font-size:10px;font-family:var(--mono);color:var(--bright)">${escHist((row.title||'').replace(/^CT-\d+\s*-\s*/,''))}</span>
                 </td>
-                <td style="padding:8px 12px;text-align:center;color:${item.risks.length ? 'var(--err)' : 'var(--muted)'}">
-                  ${item.risks.length || '—'}
+                <td style="padding:8px 10px;text-align:center">
+                  ${row.risk ? `<span style="font-size:9px;font-family:var(--mono);color:var(--err)">${escHist(row.risk)}</span>` : '<span style="color:var(--muted)">—</span>'}
                 </td>
-                <td style="padding:8px 12px;text-align:center;color:${item.gaps.length ? 'var(--warn)' : 'var(--muted)'}">
-                  ${item.gaps.length || '—'}
+                <td style="padding:8px 10px;text-align:center">
+                  ${row.gap ? `<span style="font-size:9px;font-family:var(--mono);color:var(--warn)">${escHist(row.gap)}</span>` : '<span style="color:var(--muted)">—</span>'}
                 </td>
-                <td style="padding:8px 12px;text-align:center">
-                  <span style="font-weight:700;color:${dot}">${item.coverage_pct}%</span>
+                <td style="padding:8px 10px;text-align:center">
+                  <span style="font-size:9px;font-family:var(--mono);font-weight:700;color:${prioColor[row.priority]||'var(--muted)'}">${row.priority||'—'}</span>
+                </td>
+                <td style="padding:8px 10px;text-align:center">
+                  <span style="font-size:10px;color:${row.automated!==false?'var(--ok)':'var(--muted)'}">${row.automated!==false?'✓ Sim':'✗ Não'}</span>
                 </td>
               </tr>`;
             }).join('')}
@@ -1183,118 +1353,199 @@ function buildTraceabilityContent(result) {
       </div>
     </div>`;
 
-    // Detail per requirement
-    html += `<div style="display:flex;flex-direction:column;gap:8px">`;
-    tra.items.forEach(item => {
-      if (!item.rules.length && !item.risks.length && !item.gaps.length) return;
-      html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
-        <div style="padding:9px 14px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
-          <span style="font-family:var(--mono);font-weight:700;color:var(--m3);font-size:11px">${item.req_id}</span>
-          <span style="font-size:10px;color:var(--soft)">${item.req_title}</span>
-        </div>
-        ${item.rules.map(r => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
-          <span style="color:var(--m2);flex-shrink:0">RN</span><span style="color:var(--bright)">${r}</span>
-        </div>`).join('')}
-        ${item.risks.map(r => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
-          <span style="color:var(--err);flex-shrink:0">RSK</span><span style="color:var(--bright)">${r}</span>
-        </div>`).join('')}
-        ${item.gaps.map(g => `<div style="padding:7px 14px;border-bottom:1px solid var(--b0,var(--bg));display:flex;gap:8px;font-size:10px;font-family:var(--mono)">
-          <span style="color:var(--warn);flex-shrink:0">GAP</span><span style="color:var(--bright)">${g}</span>
-        </div>`).join('')}
-      </div>`;
-    });
-    html += '</div>';
+    // ── Impact Analysis ───────────────────────────────────────────────────────
+  const impact = tra.impact_analysis || {};
+  if (impact.historical_correlations?.length || impact.requires_attention?.length) {
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m5);text-transform:uppercase;letter-spacing:.08em">
+        Impact Analysis
+      </div>
+      <div style="padding:12px 16px">
+        ${impact.requires_attention?.map(a=>`<div style="font-size:10px;font-family:var(--mono);color:var(--warn);padding:3px 0">⚠ ${escHist(a)}</div>`).join('')||''}
+        ${impact.historical_correlations?.map(c=>`
+          <div style="background:var(--s3);border-radius:5px;padding:10px 12px;margin-top:6px">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--m5)">${escHist(c.pattern||'')}</div>
+            <div style="display:flex;gap:10px;margin-top:4px;font-size:9px;font-family:var(--mono)">
+              <span style="color:var(--ok)">confiança: ${Math.round((c.confidence||0)*100)}%</span>
+              <span style="color:var(--m1)">→ ${escHist(c.recommendation||'')}</span>
+            </div>
+          </div>`).join('')||''}
+      </div>
+    </div>`;
   }
 
   html += '</div>';
   return html;
 }
+}
+
 
 function buildKnowledgeModuleContent(result) {
   const ka = result?.knowledge;
   const n  = result?.normalized;
-  if (!ka) {
-    return '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">Nenhum dado de conhecimento disponível.</div>';
-  }
+  const req = state.requirement || '';
 
-  let html = '<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0">';
+  let html = '<div style="display:flex;flex-direction:column;gap:14px">';
 
-  // Story identity
-  if (ka.story_id) {
-    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 16px">
-      <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">História identificada</div>
-      <div style="font-size:14px;font-family:var(--mono);font-weight:700;color:var(--m1)">${ka.story_id}</div>
-      ${ka.has_history ? `<div style="font-size:10px;font-family:var(--mono);color:var(--soft);margin-top:3px">${ka.previous_versions?.length || 0} versão(ões) analisada(s) · Tendência: ${ka.version_trend}</div>` : '<div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:3px">Primeira análise desta história</div>'}
+  // ── Story identity + trend ─────────────────────────────────────────────────
+  if (ka?.story_id) {
+    const trend = {'improving':'📈 Melhorando','degrading':'📉 Regredindo','stable':'➡ Estável','first':'🆕 Primeira'};
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+      <div>
+        <div style="font-size:14px;font-family:var(--mono);font-weight:700;color:var(--m1)">${ka.story_id}</div>
+        ${ka.has_history
+          ? `<div style="font-size:10px;font-family:var(--mono);color:var(--soft);margin-top:2px">${trend[ka.version_trend]||ka.version_trend} · ${(ka.previous_versions||[]).length} versão(ões)</div>`
+          : `<div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:2px">🆕 Primeira análise desta história</div>`}
+      </div>
     </div>`;
   }
 
-  // Version history
-  if (ka.has_history && ka.previous_versions?.length) {
-    const latest = ka.previous_versions[0];
+  // ── What was learned in THIS analysis ────────────────────────────────────
+  html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+    <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+      <span style="font-size:9px;font-family:var(--mono);color:var(--ok);text-transform:uppercase;letter-spacing:.08em">🧠 Aprendizado desta análise</span>
+      <span id="kl-learned-count" style="font-size:9px;font-family:var(--mono);color:var(--muted)">carregando...</span>
+    </div>
+    <div id="kl-learned-content" style="padding:10px 16px;font-size:10px;font-family:var(--mono);color:var(--muted)">
+      Verificando o que foi extraído automaticamente...
+    </div>
+  </div>`;
+
+  // ── KB stats ──────────────────────────────────────────────────────────────
+  html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+    <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">
+      📚 Base de conhecimento corporativa
+    </div>
+    <div id="kl-stats-content" style="padding:10px 16px;font-size:10px;font-family:var(--mono);color:var(--muted)">
+      Carregando estatísticas...
+    </div>
+  </div>`;
+
+  // ── Semantic search ───────────────────────────────────────────────────────
+  html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+    <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m3);text-transform:uppercase;letter-spacing:.08em">
+      🔍 Busca semântica
+    </div>
+    <div style="padding:10px 16px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="kl-search-input" type="text"
+          style="flex:1;background:var(--s3);border:1px solid var(--b1);border-radius:5px;
+                 color:var(--bright);font-family:var(--mono);font-size:11px;
+                 padding:7px 10px;outline:none"
+          placeholder="Buscar por significado... ex: falha de autenticação"
+          oninput="scheduleKLSearch(this.value)"
+          aria-label="Busca semântica no Knowledge Layer">
+        <select id="kl-engine-filter"
+          style="background:var(--s3);border:1px solid var(--b1);border-radius:5px;
+                 color:var(--bright);font-family:var(--mono);font-size:10px;
+                 padding:7px 10px;outline:none;cursor:pointer"
+          aria-label="Filtrar por engine">
+          <option value="normalizer">Todos</option>
+          <option value="risk">Riscos</option>
+          <option value="gap">Gaps</option>
+          <option value="synthesis">Correlações</option>
+        </select>
+      </div>
+      <div id="kl-search-results" style="min-height:40px">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted)">
+          Digite para buscar na base corporativa por significado, não apenas palavras exatas.
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Version delta ─────────────────────────────────────────────────────────
+  if (ka?.story_id && ka?.has_history) {
     html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
-      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">Histórico de versões</div>
-      ${ka.previous_versions.slice(0,4).map(v => {
-        const sc = v.overall_score;
-        const scColor = sc != null ? (sc >= 75 ? 'var(--ok)' : sc >= 50 ? 'var(--warn)' : 'var(--err)') : 'var(--muted)';
-        return `<div style="padding:9px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
-          <span style="font-size:9px;font-family:var(--mono);color:var(--muted)">v${v.version}</span>
-          ${sc != null ? `<span style="font-size:13px;font-family:var(--mono);font-weight:700;color:${scColor}">${sc}</span>` : ''}
-          <span style="font-size:9px;font-family:var(--mono);color:var(--muted)">${v.risk_level || '—'}</span>
-          <span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:auto">${v.created_at ? new Date(v.created_at).toLocaleDateString('pt-BR') : ''}</span>
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--warn);text-transform:uppercase;letter-spacing:.08em">⊕ Delta de versões</span>
+        <button onclick="loadKLDelta('${ka.story_id}')"
+          style="margin-left:auto;font-size:9px;font-family:var(--mono);padding:3px 10px;border-radius:4px;
+                 background:var(--s4);border:1px solid var(--b1);color:var(--soft);cursor:pointer"
+          aria-label="Carregar delta entre versões">
+          Ver o que mudou
+        </button>
+      </div>
+      <div id="kl-delta-content" style="padding:10px 16px;font-size:10px;font-family:var(--mono);color:var(--muted)">
+        Clique em "Ver o que mudou" para comparar esta versão com a anterior.
+      </div>
+    </div>`;
+  }
+
+  // ── KB entries from analysis ──────────────────────────────────────────────
+  if (ka?.kb_entries?.length) {
+    const catColor = {padrao:'var(--m1)',bug:'var(--err)',integ:'var(--m3)',gloss:'var(--m5)',comp:'var(--ok)',risco:'var(--err)',heur:'var(--m2)'};
+    const catLabel = {padrao:'Padrão',bug:'Bug Histórico',integ:'Integração',gloss:'Glossário',comp:'Compliance',risco:'Risco',heur:'Heurística'};
+    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">
+        Entradas utilizadas nesta análise (${ka.kb_entries.length})
+      </div>
+      ${ka.kb_entries.slice(0,6).map(e => {
+        const tags = e.tags || [];
+        const isAuto = tags.includes('auto-extracted');
+        const confTag = tags.find(t => t && t.startsWith('confidence:'));
+        const conf = confTag ? parseFloat(confTag.split(':')[1]) : null;
+        const occTag = tags.find(t => t && t.startsWith('occurrences:'));
+        const occ = occTag ? parseInt(occTag.split(':')[1]) : null;
+        const confColor = conf >= 0.7 ? 'var(--ok)' : conf >= 0.4 ? 'var(--warn)' : 'var(--muted)';
+        return `<div style="padding:10px 16px;border-bottom:1px solid var(--b1)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+            <span style="font-size:8px;font-family:var(--mono);text-transform:uppercase;color:${catColor[e.category]||'var(--muted)'}">${catLabel[e.category]||e.category}</span>
+            ${isAuto ? `<span style="font-size:8px;font-family:var(--mono);padding:1px 5px;border-radius:8px;background:rgba(76,175,138,.1);color:var(--ok)">auto</span>` : ''}
+            ${conf !== null ? `<span style="font-size:8px;font-family:var(--mono);color:${confColor}">confiança: ${Math.round(conf*100)}%</span>` : ''}
+            ${occ ? `<span style="font-size:8px;font-family:var(--mono);color:var(--muted)">· ${occ}x visto</span>` : ''}
+          </div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--bright)">${e.title}</div>
         </div>`;
       }).join('')}
     </div>`;
   }
 
-  // Defects
-  const d = ka.defects_summary;
-  if (d && d.total > 0) {
+  // ── Defects ───────────────────────────────────────────────────────────────
+  const d = ka?.defects_summary;
+  if (d?.total > 0) {
     html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
       <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px">
-        <span style="font-size:9px;font-family:var(--mono);color:var(--err);text-transform:uppercase;letter-spacing:.08em">Defeitos</span>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--err);text-transform:uppercase;letter-spacing:.08em">Defeitos históricos</span>
         <span style="font-size:13px;font-family:var(--mono);font-weight:700;color:var(--err);margin-left:auto">${d.total}</span>
       </div>
       <div style="padding:10px 16px;display:flex;gap:14px;font-size:10px;font-family:var(--mono);flex-wrap:wrap">
-        <span style="color:var(--err)">Abertos: ${d.open || 0}</span>
-        <span style="color:var(--ok)">Corrigidos: ${d.fixed || 0}</span>
+        <span style="color:var(--err)">Abertos: ${d.open||0}</span>
+        <span style="color:var(--ok)">Corrigidos: ${d.fixed||0}</span>
         ${d.critical ? `<span style="color:var(--err)">Critical: ${d.critical}</span>` : ''}
       </div>
-      ${(d.defects || []).slice(0,3).map(def => `<div style="padding:8px 16px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:8px">
+      ${(d.defects||[]).slice(0,3).map(def => `<div style="padding:8px 16px;border-top:1px solid var(--b1);display:flex;align-items:center;gap:8px">
         <span style="width:5px;height:5px;border-radius:50%;background:${def.severity==='critical'?'var(--err)':def.severity==='high'?'var(--warn)':'var(--m1)'};flex-shrink:0"></span>
         <span style="font-size:10px;font-family:var(--mono);color:var(--bright)">${def.title}</span>
-        ${def.jira_id ? `<span style="font-size:8px;font-family:var(--mono);color:var(--m1);margin-left:auto">${def.jira_id}</span>` : ''}
+        ${def.jira_id?`<span style="font-size:8px;font-family:var(--mono);color:var(--m1);margin-left:auto">${def.jira_id}</span>`:''}
       </div>`).join('')}
     </div>`;
   }
 
-  // KB entries
-  if (ka.kb_entries?.length) {
-    const catColor = {padrao:'var(--m1)',bug:'var(--err)',integ:'var(--m3)',gloss:'var(--m5)',comp:'var(--ok)',risco:'var(--err)',heur:'var(--m2)'};
-    const catLabel = {padrao:'Padrão',bug:'Bug Histórico',integ:'Integração',gloss:'Glossário',comp:'Compliance',risco:'Risco',heur:'Heurística'};
-    html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
-      <div style="padding:10px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:9px;font-family:var(--mono);color:var(--m2);text-transform:uppercase;letter-spacing:.08em">Conhecimento corporativo (${ka.kb_entries.length})</div>
-      ${ka.kb_entries.slice(0,5).map(e => `<div style="padding:10px 16px;border-bottom:1px solid var(--b1)">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-          <span style="font-size:8px;font-family:var(--mono);color:${catColor[e.category]||'var(--muted)'};text-transform:uppercase">${catLabel[e.category]||e.category}</span>
-          ${e.severity ? `<span style="font-size:8px;font-family:var(--mono);color:var(--muted)">${e.severity}</span>` : ''}
-        </div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--bright)">${e.title}</div>
-      </div>`).join('')}
-    </div>`;
-  }
-
-  // Keywords
+  // ── Keywords ──────────────────────────────────────────────────────────────
   if (n?.keywords?.length) {
     html += `<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 16px">
       <div style="font-size:8px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Keywords identificados</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">${n.keywords.map(k=>`<span style="font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:var(--s3);border:1px solid var(--b1);color:var(--soft)">${k}</span>`).join('')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${(n.keywords||[]).map(k=>`<span style="font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:var(--s3);border:1px solid var(--b1);color:var(--soft)">${k}</span>`).join('')}</div>
     </div>`;
   }
 
   html += '</div>';
+
+  // Load async data after render
+  setTimeout(() => {
+    loadKLLearnedData();
+    loadKLStats();
+    // Auto-search with requirement keywords
+    if (n?.keywords?.length) {
+      const q = n.keywords.slice(0,3).join(' ');
+      document.getElementById('kl-search-input').value = q;
+      runKLSearch(q, 'normalizer');
+    }
+  }, 100);
+
   return html;
 }
-
 function buildModulePlaceholder(n, result){
   if(!result) return `<div style="text-align:center;padding:60px;font-family:var(--mono);font-size:12px;color:var(--muted)">
     <div style="font-size:32px;margin-bottom:12px;color:var(--b3)">[ ]</div>
@@ -1772,6 +2023,163 @@ function renderInferenceCard(r) {
     </div>`;
 }
 
+
+// ── Knowledge Layer 3c async functions ───────────────────────────────────────
+let klSearchTimer = null;
+
+function scheduleKLSearch(q) {
+  clearTimeout(klSearchTimer);
+  klSearchTimer = setTimeout(() => {
+    const engine = document.getElementById('kl-engine-filter')?.value || 'normalizer';
+    runKLSearch(q, engine);
+  }, 400);
+}
+
+async function runKLSearch(q, engine) {
+  const el = document.getElementById('kl-search-results');
+  if (!el) return;
+  if (!q || q.length < 3) {
+    el.innerHTML = '<div style="font-size:10px;font-family:var(--mono);color:var(--muted)">Digite para buscar na base corporativa.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="font-size:10px;font-family:var(--mono);color:var(--muted)">Buscando...</div>';
+  try {
+    const r = await fetch(config.backendUrl.replace(/\/$/, '') + '/api/v1/knowledge/search/semantic', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query: q, engine: engine}),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const results = data.results || [];
+    if (!results.length) {
+      el.innerHTML = '<div style="font-size:10px;font-family:var(--mono);color:var(--muted)">Nenhum resultado encontrado para este contexto.</div>';
+      return;
+    }
+    const catColor = {padrao:'var(--m1)',bug:'var(--err)',integ:'var(--m3)',gloss:'var(--m5)',comp:'var(--ok)',risco:'var(--err)',heur:'var(--m2)'};
+    const catLabel = {padrao:'Padrão',bug:'Bug Histórico',integ:'Integração',gloss:'Glossário',comp:'Compliance',risco:'Risco',heur:'Heurística'};
+    el.innerHTML = results.map(e => {
+      const conf = e._confidence || 0;
+      const sim  = e._similarity || 0;
+      const occ  = e._occurrences || 1;
+      const tags = e.tags || [];
+      const isAuto = tags.includes('auto-extracted');
+      const confColor = conf >= 0.7 ? 'var(--ok)' : conf >= 0.4 ? 'var(--warn)' : 'var(--muted)';
+      return `<div style="background:var(--s3);border:1px solid var(--b1);border-radius:6px;padding:10px 12px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:8px;font-family:var(--mono);color:${catColor[e.category]||'var(--muted)'};text-transform:uppercase">${catLabel[e.category]||e.category}</span>
+          ${isAuto?`<span style="font-size:8px;font-family:var(--mono);padding:1px 5px;border-radius:8px;background:rgba(76,175,138,.1);color:var(--ok)">auto</span>`:''}
+          <span style="margin-left:auto;font-size:8px;font-family:var(--mono);color:${confColor}">conf: ${Math.round(conf*100)}%</span>
+          <span style="font-size:8px;font-family:var(--mono);color:var(--muted)">sim: ${Math.round(sim*100)}%</span>
+          <span style="font-size:8px;font-family:var(--mono);color:var(--muted)">${occ}x</span>
+        </div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--bright);margin-bottom:3px">${escHist(e.title||'')}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--soft)">${escHist((e.description||'').slice(0,150))}</div>
+        ${e.mitigation?`<div style="font-size:9px;font-family:var(--mono);color:var(--m1);margin-top:4px">→ ${escHist(e.mitigation.slice(0,100))}</div>`:''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:10px;font-family:var(--mono);color:var(--err)">Erro: ${e.message}</div>`;
+  }
+}
+
+async function loadKLStats() {
+  const el = document.getElementById('kl-stats-content');
+  if (!el) return;
+  try {
+    const r = await fetch(config.backendUrl.replace(/\/$/, '') + '/api/v1/knowledge/stats');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const cats = d.by_category || {};
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+        <div style="text-align:center">
+          <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--white)">${d.total||0}</div>
+          <div style="font-size:8px;font-family:var(--mono);color:var(--muted)">Total</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--ok)">${d.auto_extracted||0}</div>
+          <div style="font-size:8px;font-family:var(--mono);color:var(--muted)">Auto-aprendidos</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--m2)">${d.high_confidence||0}</div>
+          <div style="font-size:8px;font-family:var(--mono);color:var(--muted)">Alta confiança</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${Object.entries(cats).map(([cat,count]) =>
+          `<span style="font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:var(--s4);border:1px solid var(--b1);color:var(--soft)">${cat}: ${count}</span>`
+        ).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:10px">Não foi possível carregar estatísticas.</div>';
+  }
+}
+
+async function loadKLLearnedData() {
+  const el = document.getElementById('kl-learned-content');
+  const cnt = document.getElementById('kl-learned-count');
+  if (!el) return;
+  try {
+    const r = await fetch(config.backendUrl.replace(/\/$/, '') + '/api/v1/knowledge/stats');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    if (cnt) cnt.textContent = `${d.auto_extracted||0} padrões na base`;
+    el.innerHTML = d.auto_extracted > 0
+      ? `<div style="color:var(--ok)">✓ ${d.auto_extracted} padrão(ões) extraído(s) automaticamente de análises anteriores</div>
+         <div style="color:var(--muted);margin-top:4px">${d.high_confidence||0} com alta confiança (≥70%) · ${d.manual||0} cadastrado(s) manualmente</div>`
+      : `<div style="color:var(--muted)">Nenhum padrão extraído ainda. Execute mais análises para o sistema aprender.</div>`;
+  } catch(e) {
+    if (cnt) cnt.textContent = '';
+    el.innerHTML = '<div style="color:var(--muted)">Carregue o backend para ver o aprendizado.</div>';
+  }
+}
+
+async function loadKLDelta(storyId) {
+  const el = document.getElementById('kl-delta-content');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted)">Carregando delta...</div>';
+  try {
+    const r = await fetch(config.backendUrl.replace(/\/$/, '') + '/api/v1/stories/' + storyId + '/impact');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const delta = data.delta || data;
+
+    if (!delta.has_changes) {
+      el.innerHTML = `<div style="color:var(--ok)">✓ ${delta.summary||'Nenhuma mudança detectada entre versões'}</div>`;
+      return;
+    }
+
+    const impColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+    const actColor = {added:'var(--ok)',removed:'var(--err)',modified:'var(--warn)'};
+    const actLabel = {added:'+ Adicionada',removed:'− Removida','modified':'~ Modificada'};
+
+    let html = `<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:10px;font-family:var(--mono);color:var(--white)">v${delta.v_from} → v${delta.v_to}</span>
+      <span style="font-size:9px;font-family:var(--mono);padding:1px 8px;border-radius:8px;background:rgba(0,0,0,.2);color:${impColor[delta.impact_level]||'var(--muted)'}">${delta.impact_level}</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--muted)">${escHist(delta.summary||'')}</span>
+    </div>`;
+
+    (delta.items||[]).slice(0,6).forEach(item => {
+      html += `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--b1)">
+        <span style="font-size:9px;font-family:var(--mono);color:${actColor[item.action]||'var(--muted)'};white-space:nowrap;min-width:90px">${actLabel[item.action]||item.action}</span>
+        <span style="font-size:9px;font-family:var(--mono);font-weight:700;color:var(--m1);white-space:nowrap">${escHist(item.id)}</span>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--soft)">${escHist(item.description||'')}</span>
+      </div>`;
+    });
+
+    if (data.re_analysis_needed) {
+      html += `<div style="margin-top:8px;padding:8px 10px;background:rgba(255,82,82,.08);border:1px solid rgba(255,82,82,.2);border-radius:5px;font-size:10px;font-family:var(--mono);color:var(--err)">
+        ⚠ Re-análise recomendada — ${(data.affected_reqs||[]).join(', ')} afetado(s)
+      </div>`;
+    }
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--err)">Erro: ${e.message}</div>`;
+  }
+}
+
 async function loadHistory() {
   const list = document.getElementById('hd-list');
   list.innerHTML = '<div class="hd-loading">Carregando...</div>';
@@ -2011,6 +2419,28 @@ async function viewVersionHistory() {
     }, 400);
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  loadStorage();
+  updateTopbarReq();
+
+  // Restore state if exists
+  if (state.requirement) {
+    const input = document.getElementById('main-input');
+    if (input) { input.value = state.requirement; onInput(); }
+  }
+  if (state.lastResult) {
+    renderAll(state.lastResult);
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); runAnalysis(); }
+  if (e.key === 'Escape') { closeModule(); closeConfig(); closeHistory(); }
+});
 
 </script>
 

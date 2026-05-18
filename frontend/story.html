@@ -486,7 +486,12 @@ body{
     <section id="tab-versions" role="tabpanel" aria-labelledby="btn-versions" class="tab-panel active">
       <div class="section-hd">
         <h2 class="section-title">Histórico de versões</h2>
+        <button class="btn btn-ghost btn-sm" id="btn-show-delta" onclick="loadDelta()" style="display:none"
+          aria-label="Ver o que mudou entre versões">
+          ⊕ O que mudou?
+        </button>
       </div>
+      <div id="delta-panel" style="display:none;margin-bottom:16px"></div>
       <div class="version-list" id="versions-list" aria-live="polite"></div>
     </section>
 
@@ -854,9 +859,24 @@ function renderVersions() {
     el.innerHTML = emptyState('📋', 'Nenhuma versão', 'Analise esta história no Hub para criar a primeira versão.');
     return;
   }
+  // Show delta button if multiple versions
+  const deltaBtn = document.getElementById('btn-show-delta');
+  if (deltaBtn) deltaBtn.style.display = versions.length >= 2 ? '' : 'none';
+
   el.innerHTML = versions.map((v, i) => {
     const isCurrent = i === 0;
     const sc = v.overall_score;
+    // Delta compared to previous version
+    const prevVersion = versions[i + 1];
+    let deltaHtml = '';
+    if (prevVersion && sc != null && prevVersion.overall_score != null) {
+      const delta = sc - prevVersion.overall_score;
+      const deltaColor = delta > 0 ? 'var(--ok)' : delta < 0 ? 'var(--err)' : 'var(--text-muted)';
+      const deltaSign  = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+      if (delta !== 0) {
+        deltaHtml = `<span style="font-size:10px;font-family:var(--mono);color:${deltaColor};margin-left:6px">${deltaSign}${Math.abs(delta)} vs v${prevVersion.version}</span>`;
+      }
+    }
     return `<article class="version-item ${isCurrent ? 'current' : ''}"
       aria-label="Versão ${v.version}${isCurrent ? ' (atual)' : ''}">
       <div class="ver-num" aria-hidden="true">v${v.version}</div>
@@ -864,7 +884,7 @@ function renderVersions() {
         <div class="ver-date">${fmtDateTime(v.created_at)}${isCurrent ? ' · <strong>Atual</strong>' : ''}</div>
         <div class="ver-scores">
           ${sc != null ? `<div class="ver-score">
-            <div class="ver-score-val" style="color:${scoreColor(sc)}" aria-label="Score ${sc}">${sc}</div>
+            <div class="ver-score-val" style="color:${scoreColor(sc)}" aria-label="Score ${sc}">${sc}${deltaHtml}</div>
             <div class="ver-score-lbl">Score</div>
           </div>` : ''}
           ${v.risk_level ? `<div class="ver-score">
@@ -878,6 +898,12 @@ function renderVersions() {
         </div>
       </div>
       <div class="ver-actions">
+        ${v.id ? `<button class="btn btn-ghost btn-sm"
+          onclick="toggleVersionDetail('${v.id}', ${v.version}, this)"
+          aria-label="Ver análise da versão ${v.version}"
+          aria-expanded="false">
+          🔍 Ver
+        </button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="loadVersionInHub(${v.id ? `'${v.id}'` : 'null'})"
           aria-label="Abrir versão ${v.version} no Hub">
           ↗ Hub
@@ -888,8 +914,240 @@ function renderVersions() {
           ⚡ Artefatos
         </button>` : ''}
       </div>
-    </article>`;
+    </article>
+    <div id="ver-detail-${v.version}" style="display:none;background:var(--s2);border:1px solid var(--b1);border-radius:0 0 8px 8px;margin-top:-8px;margin-bottom:8px;overflow:hidden"></div>`;
   }).join('');
+}
+
+
+async function loadDelta() {
+  const btn = document.getElementById('btn-show-delta');
+  const panel = document.getElementById('delta-panel');
+  if (!panel) return;
+
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    btn.textContent = '⊕ O que mudou?';
+    return;
+  }
+
+  btn.textContent = '⏳ Carregando...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API()}/api/v1/stories/${storyId}/impact`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    panel.innerHTML = renderDeltaPanel(data);
+    panel.style.display = 'block';
+    btn.textContent = '⊖ Fechar';
+  } catch(e) {
+    panel.innerHTML = `<div style="padding:12px 16px;background:var(--s1);border:1px solid var(--b1);border-radius:8px;font-size:11px;font-family:var(--mono);color:var(--err)">Erro ao carregar delta: ${esc(e.message)}</div>`;
+    panel.style.display = 'block';
+    btn.textContent = '⊕ O que mudou?';
+  }
+  btn.disabled = false;
+}
+
+function renderDeltaPanel(data) {
+  const delta = data.delta || data;
+  if (!delta.has_changes) {
+    return `<div style="padding:14px 16px;background:var(--s1);border:1px solid var(--b1);border-radius:8px;font-size:11px;font-family:var(--mono);color:var(--text-muted)">${esc(delta.summary || 'Nenhuma mudança detectada')}</div>`;
+  }
+
+  const impactColor = {
+    critical:'var(--err)', high:'var(--warn)', medium:'var(--m1)', low:'var(--ok)', none:'var(--text-muted)'
+  };
+  const actionColor = {added:'var(--ok)', removed:'var(--err)', modified:'var(--warn)'};
+  const actionLabel = {added:'+ Adicionada', removed:'− Removida', modified:'~ Modificada'};
+
+  let html = `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden;margin-bottom:8px">
+    <div style="padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--text-primary)">
+        Mudanças v${delta.v_from} → v${delta.v_to}
+      </div>
+      <span style="font-size:10px;font-family:var(--mono);padding:2px 10px;border-radius:10px;
+        background:rgba(0,0,0,.2);color:${impactColor[delta.impact_level] || 'var(--text-muted)'}">
+        impacto: ${delta.impact_level}
+      </span>
+      <div style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--text-muted)">
+        ${esc(delta.summary)}
+      </div>
+    </div>`;
+
+  // Items
+  if (delta.items?.length) {
+    html += `<div>`;
+    delta.items.forEach(item => {
+      html += `<div style="padding:10px 16px;border-bottom:1px solid var(--b1);display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:${actionColor[item.action] || 'var(--text-muted)'};white-space:nowrap;min-width:80px">
+          ${actionLabel[item.action] || item.action}
+        </span>
+        <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m1);white-space:nowrap">${esc(item.id)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary)">${esc(item.description)}</div>
+          ${item.old_text && item.new_text ? `
+            <div style="font-size:9px;font-family:var(--mono);color:var(--err);margin-top:3px;text-decoration:line-through;opacity:.7">${esc(item.old_text.slice(0,100))}</div>
+            <div style="font-size:9px;font-family:var(--mono);color:var(--ok);margin-top:2px">${esc(item.new_text.slice(0,100))}</div>
+          ` : ''}
+        </div>
+        <span style="font-size:8px;font-family:var(--mono);padding:1px 7px;border-radius:8px;
+          background:rgba(0,0,0,.2);color:${impactColor[item.impact] || 'var(--text-muted)'};white-space:nowrap">
+          ${item.impact}
+        </span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+
+  // Impact propagation
+  if (data.re_analysis_needed) {
+    html += `<div style="background:var(--s1);border:1px solid rgba(255,82,82,.3);border-radius:8px;padding:14px 16px">
+      <div style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--err);margin-bottom:8px">
+        ⚠ Re-análise recomendada
+      </div>`;
+
+    if (data.affected_tests?.length) {
+      html += `<div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-bottom:6px">CENÁRIOS AFETADOS:</div>`;
+      data.affected_tests.slice(0,5).forEach(t => {
+        html += `<div style="font-size:10px;font-family:var(--mono);color:var(--warn);padding:3px 0">
+          → ${esc(t.scenario || t.reason)} <span style="color:var(--text-muted)">(${esc(t.action)})</span>
+        </div>`;
+      });
+    }
+
+    if (data.affected_automations?.length) {
+      html += `<div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-top:8px;margin-bottom:6px">AUTOMAÇÕES AFETADAS:</div>`;
+      data.affected_automations.slice(0,3).forEach(a => {
+        html += `<div style="font-size:10px;font-family:var(--mono);color:var(--warn);padding:3px 0">
+          → ${esc(a.automation || a.reason)}
+        </div>`;
+      });
+    }
+
+    html += `<div style="margin-top:10px">
+      <button class="btn btn-primary btn-sm" onclick="window.location.href='index.html'"
+        aria-label="Ir ao Hub para reanalisar">
+        ↗ Reanalisar no Hub
+      </button>
+    </div>
+    </div>`;
+  }
+
+  return html;
+}
+
+async function toggleVersionDetail(analysisId, version, btn) {
+  const detailEl = document.getElementById('ver-detail-' + version);
+  if (!detailEl) return;
+
+  const isOpen = detailEl.style.display !== 'none';
+  if (isOpen) {
+    detailEl.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.textContent = '🔍 Ver';
+    return;
+  }
+
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API()}/api/v1/history/${analysisId}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const result = data.result;
+
+    if (!result) {
+      detailEl.innerHTML = '<div style="padding:16px;font-family:var(--mono);font-size:11px;color:var(--text-muted)">Resultado completo não disponível para esta versão.</div>';
+    } else {
+      detailEl.innerHTML = buildVersionDetail(result, version);
+    }
+
+    detailEl.style.display = 'block';
+    btn.setAttribute('aria-expanded', 'true');
+    btn.textContent = '✕ Fechar';
+  } catch(e) {
+    detailEl.innerHTML = `<div style="padding:16px;font-family:var(--mono);font-size:11px;color:var(--err)">Erro: ${esc(e.message)}</div>`;
+    detailEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+}
+
+function buildVersionDetail(r, version) {
+  const synth = r.synthesis;
+  const sc    = synth?.overall_score;
+  const scColor = sc != null ? (sc >= 75 ? 'var(--ok)' : sc >= 50 ? 'var(--warn)' : 'var(--err)') : 'var(--text-muted)';
+
+  const engines = [
+    {key:'ambiguity', label:'Ambiguidades', color:'var(--warn)'},
+    {key:'risk',      label:'Riscos',       color:'var(--err)'},
+    {key:'rules',     label:'Regras',       color:'var(--m2)'},
+    {key:'gap',       label:'Gaps',         color:'var(--m3)'},
+    {key:'coverage',  label:'Cobertura',    color:'var(--ok)'},
+  ];
+
+  let html = `<div style="padding:16px">`;
+
+  // Score + verdict
+  if (synth) {
+    html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b1)">
+      <div style="font-size:24px;font-family:var(--mono);font-weight:700;color:${scColor}">${sc ?? '—'}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text-primary)">${esc(synth.verdict || '')}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:2px">${esc(synth.summary || '')}</div>
+      </div>
+    </div>`;
+  }
+
+  // Engine scores grid
+  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">`;
+  engines.forEach(eng => {
+    const e = r[eng.key];
+    if (!e) return;
+    html += `<div style="background:var(--s3);border-radius:6px;padding:8px;text-align:center">
+      <div style="font-size:14px;font-family:var(--mono);font-weight:700;color:${e.score >= 75 ? 'var(--ok)' : e.score >= 50 ? 'var(--warn)' : 'var(--err)'}">${e.score}</div>
+      <div style="font-size:8px;font-family:var(--mono);color:var(--text-muted);margin-top:2px">${eng.label}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Top findings
+  const allFindings = engines.flatMap(eng => (r[eng.key]?.findings || []).map(f => ({...f, _eng: eng.label, _color: eng.color})));
+  const critical = allFindings.filter(f => f.severity === 'critical' || f.severity === 'high').slice(0, 5);
+
+  if (critical.length) {
+    html += `<div style="margin-bottom:10px">
+      <div style="font-size:8px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Principais findings</div>`;
+    critical.forEach(f => {
+      html += `<div style="display:flex;gap:8px;padding:7px 10px;background:var(--s3);border-radius:5px;margin-bottom:4px">
+        <div style="width:4px;border-radius:2px;background:${f.severity === 'critical' ? 'var(--err)' : 'var(--warn)'};flex-shrink:0"></div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text-primary)">${esc(f.title)}</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">${esc(f._eng)}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Top actions
+  if (synth?.top_actions?.length) {
+    html += `<div>
+      <div style="font-size:8px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Ações prioritárias</div>`;
+    synth.top_actions.slice(0, 3).forEach((a, i) => {
+      html += `<div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary);padding:4px 0;display:flex;gap:6px">
+        <span style="color:var(--m1)">${i+1}.</span>${esc(a)}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
 }
 
 function renderDefects() {
@@ -1051,51 +1309,143 @@ function renderTraceability() {
   if (!tra) return;
 
   const covColor = s => s >= 75 ? 'var(--ok)' : s >= 50 ? 'var(--warn)' : 'var(--err)';
+  const prioColor = {critical:'var(--err)',high:'var(--warn)',medium:'var(--m1)',low:'var(--ok)'};
+  const typeColor = {positive:'var(--ok)',negative:'var(--err)',boundary:'var(--warn)',alternative:'var(--m3)'};
+  const typeLabel = {positive:'Positivo',negative:'Negativo',boundary:'Boundary',alternative:'Alternativo'};
 
-  let html = '<div style="display:flex;flex-direction:column;gap:14px">';
+  let html = '';
+  const cov = tra.coverage_detail || {};
 
-  // Summary card
-  html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
-      <div style="font-size:26px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage || 0)}">${tra.overall_coverage || 0}%</div>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${esc(tra.verdict || '')}</div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:2px">${esc(tra.summary || '')}</div>
+  // Summary
+  html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="font-size:26px;font-family:var(--mono);font-weight:700;color:${covColor(tra.overall_coverage||0)}">${tra.overall_coverage||0}%</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${esc(tra.verdict||'')}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:2px">${esc(tra.summary||'')}</div>
       </div>
     </div>
-    ${tra.uncovered?.length ? `<div style="font-size:10px;font-family:var(--mono);color:var(--err);margin-top:6px">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
+    <div style="display:flex;gap:16px;font-size:10px;font-family:var(--mono);flex-wrap:wrap">
+      <span style="color:var(--ok)">✓ ${cov.positive_scenarios||0} positivos</span>
+      <span style="color:var(--err)">✗ ${cov.negative_scenarios||0} negativos</span>
+      <span style="color:var(--m1)">⚡ ${cov.automated_pct||0}% automatizável</span>
+      <span style="color:var(--text-muted)">${cov.total_scenarios||0} cenários</span>
+    </div>
+    ${cov.by_category ? `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px">
+      ${Object.entries(cov.by_category).map(([cat,pct])=>`
+        <div style="text-align:center;background:var(--s2);border-radius:5px;padding:6px">
+          <div style="font-size:12px;font-family:var(--mono);font-weight:700;color:${covColor(pct)}">${pct}%</div>
+          <div style="font-size:8px;font-family:var(--mono);color:var(--text-muted)">${cat}</div>
+        </div>`).join('')}
+    </div>` : ''}
+    ${tra.uncovered?.length ? `<div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--err)">⚠ Sem cobertura: ${tra.uncovered.join(', ')}</div>` : ''}
   </div>`;
+
+  // Scenarios
+  const scenarios = tra.scenarios || [];
+  if (scenarios.length) {
+    html += `<div class="section-hd"><h3 class="section-title">Cenários de Teste (${scenarios.length})</h3></div>`;
+    scenarios.forEach(sc => {
+      html += `<article class="knowledge-item" style="border-left:3px solid ${typeColor[sc.type]||'var(--b1)'}" aria-label="${esc(sc.id)}: ${esc(sc.title)}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3)">${esc(sc.id)}</span>
+          <span class="badge" style="background:rgba(0,0,0,.2);color:${typeColor[sc.type]||'var(--text-muted)'}">${typeLabel[sc.type]||sc.type}</span>
+          <span class="badge badge-${sc.priority||'medium'}">${sc.priority||'medium'}</span>
+          ${sc.automated?`<span style="font-size:9px;font-family:var(--mono);color:var(--ok)">⚡ ${esc(sc.automation_type||'')}</span>`:''}
+          <div style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap">
+            ${[...(sc.origin_rn||[]),...(sc.origin_ca||[])].slice(0,4).map(id=>`<span class="badge" style="background:var(--s3);color:var(--text-muted)">${esc(id)}</span>`).join('')}
+            ${sc.origin_risk?`<span class="badge" style="background:rgba(255,82,82,.08);color:var(--err)">${esc(sc.origin_risk)}</span>`:''}
+          </div>
+        </div>
+        <div class="ki-title">${esc(sc.title)}</div>
+        <div class="ki-desc">${esc(sc.description||'')}</div>
+        ${sc.preconditions?.length?`<div style="margin-top:6px">
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-bottom:3px">Pré-condições:</div>
+          ${sc.preconditions.map(p=>`<div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary);padding:1px 0">• ${esc(p)}</div>`).join('')}
+        </div>`:''}
+        ${sc.steps?.length?`<div style="margin-top:8px;background:var(--s2);border-radius:5px;padding:8px 10px">
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-bottom:4px">Passos:</div>
+          ${sc.steps.map(s=>`<div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary);padding:2px 0">${esc(s)}</div>`).join('')}
+          <div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:6px;padding-top:6px;border-top:1px solid var(--b1)">→ ${esc(sc.expected_result||'')}</div>
+        </div>`:''}
+        ${sc.historical_note?`<div style="margin-top:6px;font-size:9px;font-family:var(--mono);color:var(--m5)">📚 ${esc(sc.historical_note)}</div>`:''}
+      </article>`;
+    });
+  }
+
+  // Test Cases
+  const test_cases_s = tra.test_cases || [];
+  if (test_cases_s.length) {
+    html += `<div class="section-hd" style="margin-top:16px"><h3 class="section-title" style="color:var(--m1)">Casos de Teste (${test_cases_s.length})</h3></div>`;
+    test_cases_s.forEach(ct => {
+      const rns = ct.rns || [];
+      const cas = ct.cas || [];
+      const rn_desc = ct.rn_descriptions || {};
+      const ca_desc = ct.ca_descriptions || {};
+      html += `<article class="knowledge-item" style="margin-bottom:10px" aria-label="${esc(ct.id)}">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);font-family:var(--mono);margin-bottom:10px;line-height:1.4">
+          ${esc(ct.title || ct.id)}
+        </div>
+        ${rns.map(rn => `<div style="display:flex;gap:8px;padding:6px 10px;background:var(--s2);border-radius:5px;margin-bottom:4px;border-left:3px solid var(--m2)">
+          <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m2);white-space:nowrap;min-width:50px">${esc(rn)}</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--text-secondary)">${esc(rn_desc[rn] || '')}</span>
+        </div>`).join('')}
+        ${cas.map(ca => `<div style="display:flex;gap:8px;padding:6px 10px;background:var(--s2);border-radius:5px;margin-bottom:4px;border-left:3px solid var(--m3)">
+          <span style="font-size:10px;font-family:var(--mono);font-weight:700;color:var(--m3);white-space:nowrap;min-width:50px">${esc(ca)}</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--text-secondary)">${esc(ca_desc[ca] || '')}</span>
+        </div>`).join('')}
+        ${ct.preconditions?.length ? `<div style="margin:8px 0">
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em">Pré-condições</div>
+          ${ct.preconditions.map(p => `<div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary);padding:2px 0">• ${esc(p)}</div>`).join('')}
+        </div>` : ''}
+        ${ct.steps?.length ? `<div style="background:var(--s2);border-radius:5px;padding:10px 12px;margin:8px 0">
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Passos</div>
+          ${ct.steps.map(s => `<div style="font-size:10px;font-family:var(--mono);color:var(--text-secondary);padding:2px 0">${esc(s)}</div>`).join('')}
+          <div style="font-size:10px;font-family:var(--mono);color:var(--ok);margin-top:8px;padding-top:8px;border-top:1px solid var(--b1)">→ ${esc(ct.expected_result || '')}</div>
+        </div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;font-size:9px;font-family:var(--mono)">
+          <span style="color:var(--text-muted)">${esc(ct.type||'')}</span>
+          ${ct.automated ? `<span style="color:var(--ok)">⚡ ${esc(ct.automation_type||'auto')}</span>` : ''}
+          ${(ct.tags||[]).map(t => `<span class="badge" style="background:var(--s3);color:var(--text-muted)">${esc(t)}</span>`).join('')}
+        </div>
+      </article>`;
+    });
+  }
 
   // RTM Table
   if (tra.items?.length) {
-    html += `<div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
+    html += `<div class="section-hd" style="margin-top:16px"><h3 class="section-title">RTM — Matriz de Rastreabilidade</h3></div>
+    <div style="background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden">
       <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px" role="grid" aria-label="Matriz de rastreabilidade">
+        <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px" role="grid">
           <thead>
             <tr style="border-bottom:1px solid var(--b1);background:var(--s2)">
               <th scope="col" style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500">Requisito</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--m2)">Regras</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--m3)">Critérios</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--ok)">Cenários</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--err)">Riscos</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--warn)">Gaps</th>
-              <th scope="col" style="padding:10px 12px;text-align:center;color:var(--text-muted)">Cob.</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--ok)">SC+</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--err)">SC-</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--m1)">CTs</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--err)">Riscos</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--text-muted)">Cob.</th>
+              <th scope="col" style="padding:10px 10px;text-align:center;color:var(--ok)">Auto</th>
             </tr>
           </thead>
           <tbody>
             ${tra.items.map(item => {
-              const dot = item.coverage === 'full' ? 'var(--ok)' : item.coverage === 'partial' ? 'var(--warn)' : 'var(--err)';
+              const dot = item.coverage==='full'?'var(--ok)':item.coverage==='partial'?'var(--warn)':'var(--err)';
+              const scPos = (tra.scenarios||[]).filter(s=>s.type==='positive'&&([...(s.origin_rn||[]),...(s.origin_ca||[])]).includes(item.req_id)).length;
+              const scNeg = (tra.scenarios||[]).filter(s=>s.type==='negative'&&([...(s.origin_rn||[]),...(s.origin_ca||[])]).includes(item.req_id)).length;
+              const cts   = (tra.test_cases||[]).filter(t=>[...(t.rns||[]),...(t.cas||[])].includes(item.req_id)).length;
               return `<tr style="border-bottom:1px solid var(--b1)" tabindex="0">
                 <td style="padding:10px 14px">
                   <div style="font-weight:700;color:var(--m3);font-size:12px">${esc(item.req_id)}</div>
                   <div style="color:var(--text-muted);font-size:9px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.req_title)}</div>
                 </td>
-                <td style="padding:10px 12px;text-align:center;color:${item.rules.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.rules.length || '—'}</td>
-                <td style="padding:10px 12px;text-align:center;color:${item.criteria.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.criteria.length || '—'}</td>
-                <td style="padding:10px 12px;text-align:center;color:${item.scenarios.length ? 'var(--ok)' : 'var(--text-muted)'};font-weight:700">${item.scenarios.length || '—'}</td>
-                <td style="padding:10px 12px;text-align:center;color:${item.risks.length ? 'var(--err)' : 'var(--text-muted)'};font-weight:700">${item.risks.length || '—'}</td>
-                <td style="padding:10px 12px;text-align:center;color:${item.gaps.length ? 'var(--warn)' : 'var(--text-muted)'};font-weight:700">${item.gaps.length || '—'}</td>
-                <td style="padding:10px 12px;text-align:center;font-weight:700;color:${dot}">${item.coverage_pct}%</td>
+                <td style="padding:10px 10px;text-align:center;color:${scPos?'var(--ok)':'var(--text-muted)'}; font-weight:700">${scPos||'—'}</td>
+                <td style="padding:10px 10px;text-align:center;color:${scNeg?'var(--err)':'var(--text-muted)'};font-weight:700">${scNeg||'—'}</td>
+                <td style="padding:10px 10px;text-align:center;color:${cts?'var(--m1)':'var(--text-muted)'};font-weight:700">${cts||'—'}</td>
+                <td style="padding:10px 10px;text-align:center;color:${item.risks.length?'var(--err)':'var(--text-muted)'};font-weight:700">${item.risks.length||'—'}</td>
+                <td style="padding:10px 10px;text-align:center;font-weight:700;color:${dot}">${item.coverage_pct}%</td>
+                <td style="padding:10px 10px;text-align:center;color:var(--text-muted)">—</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -1104,9 +1454,27 @@ function renderTraceability() {
     </div>`;
   }
 
-  html += '</div>';
+  // Impact Analysis
+  const impact = tra.impact_analysis || {};
+  if (impact.historical_correlations?.length || impact.requires_attention?.length) {
+    html += `<div class="section-hd" style="margin-top:16px"><h3 class="section-title" style="color:var(--m5)">Impact Analysis</h3></div>`;
+    (impact.requires_attention||[]).forEach(a => {
+      html += `<div style="background:rgba(255,171,64,.08);border:1px solid rgba(255,171,64,.2);border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:10px;font-family:var(--mono);color:var(--warn)">⚠ ${esc(a)}</div>`;
+    });
+    (impact.historical_correlations||[]).forEach(c => {
+      html += `<div class="knowledge-item">
+        <div class="ki-desc">${esc(c.pattern||'')}</div>
+        <div style="display:flex;gap:10px;margin-top:5px;font-size:9px;font-family:var(--mono)">
+          <span style="color:var(--ok)">confiança: ${Math.round((c.confidence||0)*100)}%</span>
+          <span class="ki-mit">→ ${esc(c.recommendation||'')}</span>
+        </div>
+      </div>`;
+    });
+  }
+
   el.innerHTML = html;
 }
+
 
 function renderKnowledge() {
   const el = document.getElementById('knowledge-list');
@@ -1136,12 +1504,25 @@ function knowledgeCard(k) {
   const cat   = k.category || '';
   const color = CAT_COLOR[cat] || 'var(--text-muted)';
   const label = CAT_LABEL[cat] || cat;
+  const tags  = k.tags || [];
+  const isAuto = tags.includes('auto-extracted');
+  const confTag = tags.find(t => t.startsWith('confidence:'));
+  const occTag  = tags.find(t => t.startsWith('occurrences:'));
+  const conf    = confTag ? parseFloat(confTag.split(':')[1]) : null;
+  const occ     = occTag  ? parseInt(occTag.split(':')[1])    : null;
+  const confColor = conf >= 0.7 ? 'var(--ok)' : conf >= 0.4 ? 'var(--warn)' : 'var(--text-muted)';
+
   return `<article class="knowledge-item" aria-label="${label}: ${esc(k.title)}">
     <div class="ki-hd">
-      <span class="ki-cat" style="color:${color}" aria-label="Categoria: ${label}">${label}</span>
+      <span class="ki-cat" style="color:${color}">${label}</span>
       ${k.severity ? `<span class="badge badge-${k.severity}">${k.severity}</span>` : ''}
+      ${isAuto ? `<span class="badge" style="background:rgba(76,175,138,.1);color:var(--ok);font-size:8px">auto</span>` : ''}
       <div class="ki-title">${esc(k.title)}</div>
     </div>
+    ${conf !== null ? `<div style="display:flex;gap:10px;margin-bottom:4px">
+      <span style="font-size:9px;font-family:var(--mono);color:${confColor}">confiança: ${Math.round(conf*100)}%</span>
+      ${occ ? `<span style="font-size:9px;font-family:var(--mono);color:var(--text-muted)">visto ${occ}x</span>` : ''}
+    </div>` : ''}
     <div class="ki-desc">${esc(k.description || '').slice(0, 300)}</div>
     ${k.mitigation ? `<div class="ki-mit">→ ${esc(k.mitigation).slice(0,200)}</div>` : ''}
   </article>`;
