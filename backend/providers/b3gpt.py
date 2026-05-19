@@ -1,15 +1,15 @@
 """
 providers/b3gpt.py
-B3GPT Provider — API corporativa B3 (Azure OpenAI compatible)
+B3GPT Provider — Azure OpenAI compatible
 
 Endpoint: {BASE_URL}/deployments/{model_name}/chat/completions
 Auth: api-key header
 
 .env config:
   AI_PROVIDER=b3gpt
-  AI_MODEL=gpt4o-mini          # ou outro modelo disponível
-  AI_API_KEY=<seu token>
-  BASE_URL=https://api-b3gpt.b3.com.br/internal-api/b3gpt-llms/v1/openai
+  AI_MODEL=<model-name>
+  AI_API_KEY=<your token>
+  BASE_URL=<your corporate endpoint>
 """
 
 import httpx

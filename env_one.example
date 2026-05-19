@@ -1,0 +1,35 @@
+# ══════════════════════════════════════════════════════════════
+# QA Intelligence System — Environment Template
+# Copie este arquivo para .env e preencha com seus valores reais
+# NUNCA commite o .env — apenas o .env.example
+# ══════════════════════════════════════════════════════════════
+
+# ── Provider de IA ────────────────────────────────────────────
+# Opções: b3gpt | anthropic | gemini
+AI_PROVIDER=b3gpt
+
+# Nome do modelo disponível no provider
+AI_MODEL=<nome-do-modelo>
+
+# Token / API Key do provider
+AI_API_KEY=<seu-token>
+
+# Endpoint base da API corporativa (apenas para b3gpt)
+# Formato: https://<host>/openai
+# O sistema adiciona: /deployments/{model}/chat/completions
+BASE_URL=<sua-url-corporativa>
+
+# ── Aplicação ─────────────────────────────────────────────────
+APP_ENV=development
+APP_HOST=0.0.0.0
+APP_PORT=8000
+APP_RELOAD=true
+
+# ── Pipeline ──────────────────────────────────────────────────
+ENGINE_MAX_TOKENS=8000
+ENGINE_TIMEOUT=120
+ENGINE_CONCURRENCY=5
+ENGINE_LANGUAGE=portuguese
+
+# ── Banco de dados ────────────────────────────────────────────
+DB_PATH=qa_system.db

@@ -29,10 +29,15 @@ def get_provider() -> BaseProvider:
             base_url=settings.AI_BASE_URL,
         )
     elif provider in ("openai", "b3gpt"):
+        base_url = settings.effective_base_url
+        if not base_url:
+            raise ValueError(
+                "AI_PROVIDER=b3gpt requer BASE_URL ou AI_BASE_URL definido no .env"
+            )
         return B3GPTProvider(
             api_key=settings.AI_API_KEY,
             model=settings.AI_MODEL,
-            base_url=settings.effective_base_url or "https://api-b3gpt.b3.com.br/internal-api/b3gpt-llms/v1/openai",
+            base_url=base_url,
             timeout=int(settings.ENGINE_TIMEOUT),
         )
     elif provider == "gemini":
