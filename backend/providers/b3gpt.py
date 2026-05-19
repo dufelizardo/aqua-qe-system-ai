@@ -32,6 +32,17 @@ class B3GPTProvider(BaseProvider):
     def model_name(self) -> str:
         return self.model
 
+    async def health_check(self) -> bool:
+        try:
+            url = f"{self.base_url}/deployments/{self.model}/chat/completions"
+            headers = {"Content-Type": "application/json", "api-key": self.api_key}
+            body = {"messages": [{"role": "user", "content": "ping"}], "max_tokens": 5}
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.post(url, headers=headers, json=body)
+                return resp.status_code == 200
+        except Exception:
+            return False
+
     async def complete(self, request: CompletionRequest) -> CompletionResponse:
         url = f"{self.base_url}/deployments/{self.model}/chat/completions"
 
