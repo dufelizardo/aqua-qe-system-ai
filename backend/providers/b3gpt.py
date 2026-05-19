@@ -70,4 +70,4 @@ class B3GPTProvider(BaseProvider):
                 .get("content", "")
         )
 
-        return CompletionResponse(content=content)
+        return CompletionResponse(content=content, model=self.model)
