@@ -160,8 +160,8 @@ body{
 .mc-finding{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;}
 .mf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px;}
 .mf-text{font-size:13px;color:var(--body);line-height:1.5;}
-.mc-open{width:100%;padding:11px;background:var(--s3);border:none;border-top:1px solid var(--b1);font-family:var(--mono);font-size:12px;color:var(--bright);cursor:pointer;transition:all .2s;font-weight:500;}
-.mc-open:hover,.mc-open:focus-visible{background:var(--s4);color:var(--white);}
+.mc-open{width:100%;padding:11px;background:var(--s3);border-top:1px solid var(--b1);font-family:var(--mono);font-size:12px;color:var(--bright);cursor:pointer;transition:all .2s;font-weight:500;text-align:center;}
+.mc-open:hover{background:var(--s4);color:var(--white);}
 
 /* ── Synthesis ── */
 .synth-card{
@@ -483,7 +483,7 @@ pre.artifact{
         <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">No MFA or 2FA mentioned for sensitive access</div></div>
         <div class="mc-finding"><div class="mf-dot" style="background:var(--m1)"></div><div class="mf-text">9 business rules identified · 6 acceptance criteria</div></div>
       </div>
-      <button class="mc-open">+ Open full module</button>
+      <div class="mc-open" role="presentation">+ Open full module</div>
     </button>
 
     <!-- Card 2: Knowledge Layer -->
@@ -501,7 +501,7 @@ pre.artifact{
         <div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><div class="mf-text">6 KB entries matched (brute force, session, LGPD)</div></div>
         <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Pattern: Login flows without lockout caused 3 security incidents (conf: 87%)</div></div>
       </div>
-      <button class="mc-open">+ Open full module</button>
+      <div class="mc-open" role="presentation">+ Open full module</div>
     </button>
 
     <!-- Card 3: Traceability -->
@@ -520,7 +520,7 @@ pre.artifact{
         <div class="mc-finding"><div class="mf-dot" style="background:var(--m1)"></div><div class="mf-text">⚡ 92% automatable · 11 test cases generated</div></div>
         <div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><div class="mf-text">Without coverage: RN-07 lockout threshold missing</div></div>
       </div>
-      <button class="mc-open">+ Open full module</button>
+      <div class="mc-open" role="presentation">+ Open full module</div>
     </button>
 
     <!-- Card 4: Coverage -->
@@ -539,7 +539,7 @@ pre.artifact{
         <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Password recovery flow (RN-08) has no CA</div></div>
         <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Logout scenario (RN-09) partially covered</div></div>
       </div>
-      <button class="mc-open">+ Open full module</button>
+      <div class="mc-open" role="presentation">+ Open full module</div>
     </button>
 
     <!-- Card 5: Artifact Generation -->
@@ -558,7 +558,7 @@ pre.artifact{
         <div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><div class="mf-text">PO · Acceptance Criteria · Business Value</div></div>
         <div class="mc-finding"><div class="mf-dot" style="background:var(--m4)"></div><div class="mf-text">Audit · Risk Report · Exportable RTM</div></div>
       </div>
-      <button class="mc-open">+ Open full module</button>
+      <div class="mc-open" role="presentation">+ Open full module</div>
     </button>
 
   </div>
