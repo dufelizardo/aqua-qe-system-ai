@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQuA Intelligence Platform — Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090f;--s1:#0f1018;--s2:#14161f;--s3:#1a1d28;--s4:#21253a;
+  --b1:#2a3050;--b2:#404a70;--b3:#5a6594;
+  /* Texto - recalibrado para WCAG AA sobre #09090f */
+  --text:#dbe4f3;       /* ~12:1 */
+  --soft:#a8b8d9;       /* ~7:1 */
+  --muted:#8090b3;      /* ~4.8:1 — passa AA */
+  --white:#eef4ff;
+  --accent:#9ec5ff; --gold:#f5d080; --teal:#7ee5d2; --rose:#ff8a9f;
+  --ok:#7ee5d2; --warn:#f5d080; --err:#ff8a9f;
+  --focus:#9ec5ff;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --display:'DM Serif Display',serif;
+  --nav-w:260px;
+  --top-h:60px;
+}
+
+html{height:100%;scroll-behavior:smooth;font-size:16px;}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100%;
+  line-height:1.65;
+  font-size:16px;
+  display:flex;
+  flex-direction:column;
+  -webkit-text-size-adjust:100%;
+}
+
+/* WCAG 2.4.7 focus visível */
+:focus-visible{outline:2px solid var(--focus)!important;outline-offset:3px!important;border-radius:3px;}
+:focus:not(:focus-visible){outline:none;}
+
+/* WCAG 2.3.3 — respeita preferência de movimento */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* Screen reader only */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+/* Skip link */
+.skip-link{
+  position:fixed;top:-100px;left:16px;z-index:9999;
+  background:var(--accent);color:#0a1020;
+  padding:12px 22px;border-radius:6px;
+  font-size:14px;font-weight:700;text-decoration:none;
+  transition:top .15s;
+}
+.skip-link:focus{top:16px;}
+
+/* WCAG: floor para tamanhos minúsculos (incl. inline) */
+[style*="font-size:8px"],[style*="font-size: 8px"]{font-size:11px!important;}
+[style*="font-size:9px"],[style*="font-size: 9px"]{font-size:12px!important;}
+[style*="font-size:10px"],[style*="font-size: 10px"]{font-size:12px!important;}
+
+/* ── Topbar ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;
+  height:var(--top-h);
+  background:rgba(9,9,15,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;
+  padding:0 28px;gap:16px;
+  z-index:100;
+}
+.topbar-logo{
+  font-family:var(--display);
+  font-size:20px;color:var(--white);
+  display:flex;align-items:center;gap:10px;
+}
+.topbar-logo .badge{
+  font-family:var(--mono);font-size:9px;font-style:normal;
+  background:var(--accent);color:#091020;
+  padding:2px 8px;border-radius:20px;font-weight:500;
+  letter-spacing:.05em;
+}
+.topbar-search{
+  margin-left:auto;
+  background:var(--s2);border:1px solid var(--b1);
+  border-radius:6px;padding:9px 14px;
+  display:flex;align-items:center;gap:8px;
+  color:var(--muted);font-size:14px;font-family:var(--mono);
+  cursor:text;min-width:220px;min-height:40px;
+  transition:border-color .2s;
+}
+.topbar-search:focus-within{border-color:var(--accent);}
+.topbar-search input{
+  background:none;border:none;outline:none;
+  color:var(--text);font-family:var(--mono);font-size:14px;
+  width:100%;
+}
+.topbar-search input::placeholder{color:var(--muted);}
+.topbar-version{
+  font-family:var(--mono);font-size:12px;color:var(--muted);
+  padding:5px 12px;border:1px solid var(--b1);border-radius:4px;
+}
+
+/* ── Layout ── */
+.layout{
+  display:flex;
+  padding-top:var(--top-h);
+  min-height:100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--nav-w);
+  position:fixed;top:var(--top-h);left:0;bottom:0;
+  overflow-y:auto;overflow-x:hidden;
+  background:var(--s1);
+  border-right:1px solid var(--b1);
+  padding:24px 0 40px;
+  scrollbar-width:thin;scrollbar-color:var(--b1) transparent;
+}
+.sidebar::-webkit-scrollbar{width:4px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--b1);}
+
+.nav-section{margin-bottom:4px;}
+.nav-label{
+  font-family:var(--mono);font-size:12px;font-weight:600;
+  color:var(--soft);text-transform:uppercase;letter-spacing:.08em;
+  padding:10px 20px 6px;display:block;
+}
+.nav-link{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;
+  color:var(--text);font-size:14px;font-weight:400;
+  text-decoration:none;border-left:3px solid transparent;
+  transition:all .15s;cursor:pointer;
+  background:transparent;border-top:none;border-right:none;border-bottom:none;
+  width:100%;text-align:left;font-family:inherit;min-height:40px;
+}
+.nav-link:hover{color:var(--white);background:var(--s2);}
+.nav-link:focus-visible{background:var(--s2);}
+.nav-link.active{
+  color:var(--accent);border-left-color:var(--accent);
+  background:rgba(158,197,255,.08);font-weight:600;
+}
+.nav-link .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.nav-sub{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 20px 7px 50px;
+  color:var(--soft);font-size:13px;text-decoration:none;
+  transition:color .15s;cursor:pointer;
+  background:transparent;border:none;
+  width:100%;text-align:left;font-family:inherit;min-height:34px;
+}
+.nav-sub:hover,.nav-sub:focus-visible{color:var(--white);}
+.nav-sub.active{color:var(--accent);font-weight:500;}
+
+/* ── Main content ── */
+.main{
+  margin-left:var(--nav-w);
+  flex:1;min-width:0;
+  padding:48px 64px 80px;
+  max-width:900px;
+}
+
+/* ── Sections ── */
+.section{display:none;}
+.section.active{display:block;}
+
+/* ── Typography ── */
+h1{
+  font-family:var(--display);font-size:clamp(32px,4vw,46px);font-weight:400;
+  color:var(--white);line-height:1.15;margin-bottom:20px;
+}
+h1 em{color:var(--accent);font-style:italic;}
+h2{
+  font-family:var(--display);font-size:clamp(24px,2.6vw,30px);font-weight:400;
+  color:var(--white);margin-top:56px;margin-bottom:18px;
+  padding-bottom:12px;border-bottom:1px solid var(--b1);
+}
+h3{
+  font-size:19px;font-weight:600;color:var(--white);
+  margin-top:36px;margin-bottom:12px;line-height:1.3;
+}
+h4{
+  font-size:14px;font-weight:600;color:var(--accent);
+  margin-top:24px;margin-bottom:8px;
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;
+}
+p{margin-bottom:18px;line-height:1.7;font-size:16px;}
+a{color:var(--accent);text-decoration:none;}
+a:hover,a:focus-visible{text-decoration:underline;}
+strong{color:var(--white);font-weight:600;}
+em{color:var(--gold);}
+
+/* ── Lead ── */
+.lead{
+  font-size:19px;color:var(--soft);line-height:1.65;
+  margin-bottom:36px;max-width:680px;
+}
+
+/* ── Hero ── */
+.hero{
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  border:1px solid var(--b1);border-radius:12px;
+  padding:clamp(24px,3vw,44px);margin-bottom:40px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-60px;right:-40px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(158,197,255,.1),transparent 70%);
+  border-radius:50%;
+}
+.hero-title{
+  font-family:var(--display);font-size:clamp(28px,3.4vw,40px);color:var(--white);
+  line-height:1.2;margin-bottom:14px;
+}
+.hero-title em{color:var(--accent);}
+.hero-sub{font-size:16px;color:var(--soft);max-width:560px;line-height:1.7;}
+.hero-badges{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+.badge-pill{
+  font-family:var(--mono);font-size:13px;font-weight:500;
+  padding:5px 14px;border-radius:20px;
+  border:1px solid;
+}
+.badge-pill.blue{border-color:rgba(158,197,255,.4);color:var(--accent);background:rgba(158,197,255,.08);}
+.badge-pill.teal{border-color:rgba(126,229,210,.4);color:var(--teal);background:rgba(126,229,210,.08);}
+.badge-pill.gold{border-color:rgba(245,208,128,.4);color:var(--gold);background:rgba(245,208,128,.08);}
+
+/* ── Cards ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin:28px 0;}
+.card{
+  background:var(--s2);border:1px solid var(--b1);border-radius:10px;
+  padding:22px;transition:border-color .2s,transform .2s;
+}
+.card:hover{border-color:var(--b2);transform:translateY(-2px);}
+.card-icon{font-size:24px;margin-bottom:12px;}
+.card-title{font-size:16px;font-weight:600;color:var(--white);margin-bottom:8px;}
+.card-desc{font-size:14px;color:var(--soft);line-height:1.6;}
+
+/* ── Code blocks ── */
+pre{
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:20px;overflow-x:auto;margin:20px 0;
+  font-family:var(--mono);font-size:14px;color:var(--text);
+  line-height:1.7;
+}
+code{
+  font-family:var(--mono);font-size:14px;
+  background:var(--s3);padding:2px 7px;border-radius:4px;
+  color:var(--accent);
+}
+pre code{background:none;padding:0;color:inherit;}
+
+/* ── Callouts ── */
+.callout{
+  border-radius:8px;padding:18px 22px;margin:22px 0;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.callout.info{background:rgba(158,197,255,.08);border:1px solid rgba(158,197,255,.25);}
+.callout.warn{background:rgba(245,208,128,.08);border:1px solid rgba(245,208,128,.25);}
+.callout.success{background:rgba(126,229,210,.08);border:1px solid rgba(126,229,210,.25);}
+.callout.danger{background:rgba(255,138,159,.08);border:1px solid rgba(255,138,159,.25);}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-body{font-size:14px;color:var(--text);line-height:1.65;}
+.callout-body strong{color:var(--white);}
+
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px;}
+th{
+  text-align:left;padding:12px 14px;
+  background:var(--s3);color:var(--soft);
+  font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+  border-bottom:1px solid var(--b1);font-weight:600;
+}
+td{
+  padding:12px 14px;border-bottom:1px solid var(--b1);
+  color:var(--text);vertical-align:top;
+}
+tr:hover td{background:var(--s2);}
+
+/* ── Steps ── */
+.steps{margin:28px 0;}
+.step{
+  display:flex;gap:18px;margin-bottom:28px;
+  align-items:flex-start;
+}
+.step-num{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--accent);color:#091020;
+  font-family:var(--mono);font-size:14px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:2px;
+}
+.step-content{flex:1;min-width:0;}
+.step-title{font-weight:600;color:var(--white);margin-bottom:8px;font-size:16px;}
+.step-desc{font-size:14px;color:var(--soft);line-height:1.65;}
+
+/* ── Pipeline viz ── */
+.pipeline{
+  display:flex;align-items:center;gap:0;
+  overflow-x:auto;padding:26px 4px;margin:24px 0;
+  -webkit-overflow-scrolling:touch;
+}
+.pipe-node{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-width:88px;flex-shrink:0;
+}
+.pipe-dot{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:700;color:#0a1020;
+}
+.pipe-label{font-size:12px;font-family:var(--mono);color:var(--soft);text-align:center;font-weight:500;}
+.pipe-arrow{color:var(--b3);font-size:20px;margin:0 -2px;margin-bottom:24px;flex-shrink:0;}
+
+/* ── Artifact cards ── */
+.artifact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:22px 0;}
+.artifact-card{
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:18px;
+}
+.artifact-profile{
+  font-family:var(--mono);font-size:12px;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:10px;font-weight:600;
+}
+.artifact-list{list-style:none;}
+.artifact-list li{
+  font-size:14px;color:var(--text);padding:5px 0;
+  display:flex;gap:8px;align-items:center;
+}
+.artifact-list li::before{content:'→';color:var(--accent);font-size:13px;flex-shrink:0;}
+
+/* ── RTM preview ── */
+.rtm-preview{
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  overflow:hidden;margin:22px 0;
+}
+.rtm-header{
+  padding:12px 18px;background:var(--s3);border-bottom:1px solid var(--b1);
+  font-family:var(--mono);font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+}
+.rtm-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;}
+.rtm-table th{
+  padding:10px 14px;text-align:left;color:var(--soft);font-weight:600;font-size:12px;
+  background:var(--s3);border-bottom:1px solid var(--b1);
+}
+.rtm-table td{padding:10px 14px;border-bottom:1px solid rgba(42,48,80,.5);color:var(--text);}
+.rtm-table td.id{color:var(--accent);font-weight:600;}
+.rtm-table td.rn{color:var(--gold);}
+.rtm-table td.ca{color:var(--teal);}
+.rtm-table td.risk{color:var(--rose);}
+.rtm-table td.ok{color:var(--ok);}
+.tag{
+  display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:2px 8px;border-radius:3px;
+  background:rgba(158,197,255,.1);color:var(--accent);
+  border:1px solid rgba(158,197,255,.25);
+}
+.tag.critical{background:rgba(255,138,159,.1);color:var(--rose);border-color:rgba(255,138,159,.25);}
+.tag.high{background:rgba(245,208,128,.1);color:var(--gold);border-color:rgba(245,208,128,.25);}
+
+/* ── API endpoint ── */
+.endpoint{
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  margin:14px 0;overflow:hidden;
+}
+.endpoint-header{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 18px;border-bottom:1px solid var(--b1);
+}
+.method{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  padding:4px 10px;border-radius:4px;min-width:54px;text-align:center;
+}
+.method.get{background:rgba(126,229,210,.15);color:var(--teal);}
+.method.post{background:rgba(158,197,255,.15);color:var(--accent);}
+.endpoint-path{font-family:var(--mono);font-size:14px;color:var(--white);word-break:break-all;}
+.endpoint-desc{font-size:14px;color:var(--text);padding:12px 18px;line-height:1.6;}
+
+/* ── Breadcrumb ── */
+.breadcrumb{
+  font-family:var(--mono);font-size:13px;color:var(--soft);
+  margin-bottom:36px;display:flex;align-items:center;gap:8px;
+}
+.breadcrumb span{color:var(--b3);}
+
+/* ── Footer ── */
+.doc-footer{
+  margin-top:64px;padding-top:32px;border-top:1px solid var(--b1);
+  font-size:13px;color:var(--soft);font-family:var(--mono);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+
+/* Sidebar toggle (mobile) */
+.sidebar-toggle{
+  display:none;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:6px;
+  background:var(--s2);border:1px solid var(--b1);color:var(--text);
+  cursor:pointer;font-size:18px;
+}
+.sidebar-toggle:hover,.sidebar-toggle:focus-visible{background:var(--s3);}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .main{padding:32px 24px 60px;}
+}
+@media(max-width:768px){
+  .topbar{padding:0 16px;gap:10px;}
+  .topbar-logo{font-size:17px;}
+  .topbar-search{display:none;}
+  .topbar-version{display:none;}
+  .sidebar-toggle{display:inline-flex;}
+  .sidebar{
+    transform:translateX(-100%);transition:transform .3s;
+    box-shadow:8px 0 32px rgba(0,0,0,.5);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;padding:24px 18px 60px;}
+  h1{font-size:32px;}
+  h2{font-size:24px;margin-top:40px;}
+  .hero{padding:24px;}
+  .hero-title{font-size:26px;}
+  .lead{font-size:17px;}
+}
+@media(max-width:480px){
+  .main{padding:18px 14px 60px;}
+  .step{gap:12px;}
+  .step-num{width:28px;height:28px;font-size:13px;}
+  pre{font-size:13px;padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- TOP BAR -->
+<header class="topbar" role="banner">
+  <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="sidebar">
+    <span aria-hidden="true">☰</span>
+  </button>
+  <div class="topbar-logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="10" stroke="#9ec5ff" stroke-width="1.5"/>
+      <path d="M7 11h8M11 7v8" stroke="#9ec5ff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    AQuA Intelligence Platform
+    <span class="badge">v1.0</span>
+  </div>
+  <div class="topbar-search" role="search">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <circle cx="6" cy="6" r="4.5" stroke="#a8b8d9" stroke-width="1.3"/>
+      <path d="m9.5 9.5 2.5 2.5" stroke="#a8b8d9" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <label class="sr-only" for="doc-search">Search documentation</label>
+    <input type="search" id="doc-search" placeholder="Search docs...">
+  </div>
+  <div class="topbar-version" aria-label="Documentation version">docs v1.0</div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar" aria-label="Documentation navigation">
+  <div class="nav-section">
+    <span class="nav-label">Getting Started</span>
+    <button type="button" class="nav-link active" onclick="show('overview',this)" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">🏠</span> Overview
+    </button>
+    <button type="button" class="nav-link" onclick="show('quickstart',this)">
+      <span class="nav-icon" aria-hidden="true">⚡</span> Quick Start
+    </button>
+    <button type="button" class="nav-link" onclick="show('concepts',this)">
+      <span class="nav-icon" aria-hidden="true">💡</span> Core Concepts
+    </button>
+  </div>
+  <div class="nav-section">
+    <span class="nav-label">Pipeline</span>
+    <button type="button" class="nav-link" onclick="show('pipeline',this)">
+      <span class="nav-icon" aria-hidden="true">⚙</span> How it Works
+    </button>
+    <button type="button" class="nav-sub" onclick="show('pipeline',this)">Normalizer</button>
+    <button type="button" class="nav-sub" onclick="show('pipeline',this)">Parallel Engines</button>
+    <button type="button" class="nav-sub" onclick="show('pipeline',this)">Synthesis</button>
+  </div>
+  <div class="nav-section">
+    <span class="nav-label">Features</span>
+    <button type="button" class="nav-link" onclick="show('knowledge',this)">
+      <span class="nav-icon" aria-hidden="true">🧠</span> Knowledge Layer
+    </button>
+    <button type="button" class="nav-link" onclick="show('traceability',this)">
+      <span class="nav-icon" aria-hidden="true">🔗</span> Traceability &amp; RTM
+    </button>
+    <button type="button" class="nav-link" onclick="show('inference',this)">
+      <span class="nav-icon" aria-hidden="true">🔍</span> Requirements Inference
+    </button>
+    <button type="button" class="nav-link" onclick="show('artifacts',this)">
+      <span class="nav-icon" aria-hidden="true">⚡</span> Artifact Generation
+    </button>
+  </div>
+  <div class="nav-section">
+    <span class="nav-label">Reference</span>
+    <button type="button" class="nav-link" onclick="show('api',this)">
+      <span class="nav-icon" aria-hidden="true">📡</span> API Reference
+    </button>
+    <button type="button" class="nav-link" onclick="show('config',this)">
+      <span class="nav-icon" aria-hidden="true">🔧</span> Configuration
+    </button>
+    <button type="button" class="nav-link" onclick="show('faq',this)">
+      <span class="nav-icon" aria-hidden="true">❓</span> FAQ &amp; Troubleshooting
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main" id="main-content">
+
+<!-- ══ OVERVIEW ══ -->
+<section class="section active" id="sec-overview">
+  <div class="breadcrumb">Docs <span>/</span> Overview</div>
+  <div class="hero">
+    <div class="hero-title">AQuA <em>Intelligence</em> Platform</div>
+    <div class="hero-sub">An AI-powered platform that transforms software requirements into structured analyses, traceable test matrices, and ready-to-use quality artifacts.</div>
+    <div class="hero-badges">
+      <span class="badge-pill blue">AI-Powered Pipeline</span>
+      <span class="badge-pill teal">Corporate Knowledge Layer</span>
+      <span class="badge-pill gold">RTM &amp; Artifact Generation</span>
+    </div>
+  </div>
+
+  <h2>What is the AQuA Intelligence Platform?</h2>
+  <p>The AQuA Intelligence Platform is an internal platform that analyzes software requirements using a multi-engine AI pipeline. Each requirement is processed by specialized engines that run in parallel, then a Synthesis Engine correlates all findings to produce actionable insights.</p>
+  <p>The system learns from every analysis — building a corporate Knowledge Layer that grows smarter over time, allowing it to detect patterns, flag recurring risks, and suggest test coverage based on your organization's history.</p>
+
+  <h2>Who is it for?</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon">🧪</div>
+      <div class="card-title">QA Engineers</div>
+      <div class="card-desc">Get auto-generated test scenarios, RTM, Gherkin files, and evidence templates based on real business rules and acceptance criteria.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">💻</div>
+      <div class="card-title">Developers</div>
+      <div class="card-desc">Receive technical gap analysis, automation skeletons (Robot Framework, Playwright, pytest), and identified missing specifications.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Product Owners</div>
+      <div class="card-desc">See inferred acceptance criteria, functional gaps translated into user impact, and business value reports in plain language.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔐</div>
+      <div class="card-title">Audit &amp; Compliance</div>
+      <div class="card-desc">Access full Risk Reports with historical correlation, exportable RTMs, and regulatory compliance flags (LGPD, ISO standards).</div>
+    </div>
+  </div>
+
+  <h2>Key Capabilities</h2>
+  <table>
+    <thead><tr><th>Capability</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Multi-engine analysis</strong></td><td>6 specialized engines run in parallel: Ambiguity, Risk, Rules, Gap, Coverage, Inference</td></tr>
+      <tr><td><strong>Structured RN/CA parsing</strong></td><td>Business rules and acceptance criteria are extracted automatically from requirement text</td></tr>
+      <tr><td><strong>Knowledge Layer</strong></td><td>TF-IDF semantic search over corporate KB — finds related patterns by meaning, not keywords</td></tr>
+      <tr><td><strong>Version tracking</strong></td><td>Every analysis is saved and versioned — compare v1 vs v6 of a story with full delta</td></tr>
+      <tr><td><strong>Impact propagation</strong></td><td>When an RN changes, the system identifies affected test cases and automations</td></tr>
+      <tr><td><strong>Traceability Matrix</strong></td><td>Full RTM: ID do Teste | RN | CA | Título | Risco | Gap | Prioridade | Automatizável</td></tr>
+      <tr><td><strong>Artifact generation</strong></td><td>9 artifacts across 4 profiles using real pipeline data, not generic templates</td></tr>
+      <tr><td><strong>Pluggable AI provider</strong></td><td>Works with Azure OpenAI, Anthropic, or Google Gemini — swap via .env</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How value is delivered</h2>
+  <p>Without the system, a QA engineer spends hours reading requirements, manually writing test cases, and building traceability matrices. With the system:</p>
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body"><strong>Paste a requirement → get a complete analysis in under 2 minutes</strong> — including risks, gaps, business rules, inferred requirements, test scenarios, RTM, and downloadable artifacts.</div>
+  </div>
+  <div class="callout success">
+    <div class="callout-icon">📈</div>
+    <div class="callout-body"><strong>The system improves over time.</strong> Each analysis automatically enriches the corporate Knowledge Base. Recurring risks get higher confidence scores. Patterns from past defects surface in new analyses.</div>
+  </div>
+</section>
+
+<!-- ══ QUICKSTART ══ -->
+<section class="section" id="sec-quickstart">
+  <div class="breadcrumb">Docs <span>/</span> Quick Start</div>
+  <h1>Quick <em>Start</em></h1>
+  <p class="lead">Get the system running in 5 minutes.</p>
+
+  <h2>Prerequisites</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>Version</th></tr></thead>
+    <tbody>
+      <tr><td>Python</td><td>3.12+</td></tr>
+      <tr><td>pip</td><td>latest</td></tr>
+      <tr><td>AI Provider access</td><td>Azure OpenAI / Anthropic / Gemini</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Installation</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Install dependencies</div>
+        <pre>cd backend
+py -3.12 -m pip install -r requirements.txt</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Configure your environment</div>
+        <div class="step-desc">Copy the template and fill in your values:</div>
+        <pre>copy .env.example .env</pre>
+        <pre># .env
+AI_PROVIDER=b3gpt
+AI_MODEL=&lt;your-model&gt;
+AI_API_KEY=&lt;your-token&gt;
+BASE_URL=&lt;your-corporate-endpoint&gt;
+ENGINE_MAX_TOKENS=8000
+ENGINE_LANGUAGE=portuguese</pre>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Initialize the database</div>
+        <pre>py -3.12 seed_knowledge.py</pre>
+        <div class="step-desc">This creates the SQLite database and seeds it with initial corporate knowledge entries.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Start the server</div>
+        <pre>py -3.12 -m uvicorn main:app --reload</pre>
+        <div class="step-desc">API available at <code>http://localhost:8000</code>. Open <code>frontend/index.html</code> in your browser.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Run your first analysis</div>
+        <div class="step-desc">Paste a user story or requirement in the Hub input field and click <strong>Analyze Pipeline</strong>. Results appear across all modules in real time.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠</div>
+    <div class="callout-body"><strong>Reset the database</strong> whenever you change schema files (<code>schemas.py</code>, <code>database.py</code>). Delete <code>qa_system.db</code> and re-run <code>seed_knowledge.py</code>.</div>
+  </div>
+</section>
+
+<!-- ══ CONCEPTS ══ -->
+<section class="section" id="sec-concepts">
+  <div class="breadcrumb">Docs <span>/</span> Core Concepts</div>
+  <h1>Core <em>Concepts</em></h1>
+  <p class="lead">Key ideas you need to understand before working with the system.</p>
+
+  <h2>Story ID Detection</h2>
+  <p>The system automatically detects story IDs in the format <code>ABC-1234</code> (e.g. <code>BSAG-1724</code>) from requirement text. When detected, all analysis results are versioned and linked to that story ID.</p>
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">Paste the full user story text including the story ID. The system extracts it automatically and links versions, defects, and KB entries to that story.</div>
+  </div>
+
+  <h2>RNs and CAs</h2>
+  <p>The <strong>Requirement Parser</strong> extracts structured items from requirement text:</p>
+  <table>
+    <thead><tr><th>Notation</th><th>Meaning</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>RN-01</code></td><td>Business Rule (<em>Regra de Negócio</em>)</td><td>RN-01: The card must be displayed alphabetically</td></tr>
+      <tr><td><code>CA-01</code></td><td>Acceptance Criterion (<em>Critério de Aceite</em>)</td><td>CA-01: A card with title "ISIN Query" must exist</td></tr>
+      <tr><td><code>RF-01</code></td><td>Functional Requirement</td><td>Inferred by the Inference Engine</td></tr>
+      <tr><td><code>RNF-01</code></td><td>Non-Functional Requirement</td><td>Inferred by the Inference Engine</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Versioning</h2>
+  <p>Every time you analyze the same story ID, the system creates a new version. Versions are immutable — v1 always reflects what was analyzed at that point in time.</p>
+  <p>In <code>story.html</code>, the <strong>Versions</strong> tab shows the full timeline with score evolution, delta between versions (what changed in RNs and CAs), and impact propagation (which test cases are affected).</p>
+
+  <h2>Knowledge Base</h2>
+  <p>The corporate Knowledge Base (KB) stores patterns, risks, bugs, compliance rules, and heuristics. It has two sources:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Manual entries</strong> — added via the API or seeded from <code>seed_knowledge.py</code></li>
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Auto-extracted entries</strong> — added automatically after each analysis (badge: <code>auto</code>)</li>
+  </ul>
+  <p>Confidence scores grow with repetition: a pattern seen once = 30% confidence; seen 8+ times = 90% confidence.</p>
+</section>
+
+<!-- ══ PIPELINE ══ -->
+<section class="section" id="sec-pipeline">
+  <div class="breadcrumb">Docs <span>/</span> Pipeline</div>
+  <h1>How it <em>Works</em></h1>
+  <p class="lead">A complete walkthrough of the analysis pipeline.</p>
+
+  <div class="pipeline" role="img" aria-label="Pipeline flow diagram">
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#7eb3ff">N</div>
+      <div class="pipe-label">Normalizer</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#f0c060">A</div>
+      <div class="pipe-label">Ambiguity</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#ff7090">R</div>
+      <div class="pipe-label">Risk</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#b594ff">RN</div>
+      <div class="pipe-label">Rules</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#5ddbc8">G</div>
+      <div class="pipe-label">Gap</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#7eb3ff">C</div>
+      <div class="pipe-label">Coverage</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:#ffc070">I</div>
+      <div class="pipe-label">Inference</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-dot" style="background:linear-gradient(135deg,#7eb3ff,#b594ff)">S</div>
+      <div class="pipe-label">Synthesis</div>
+    </div>
+  </div>
+
+  <h2>Stage 1 — Normalizer</h2>
+  <p>The Normalizer is the first engine to run. It does two things simultaneously:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:8px;">Uses AI to extract <strong style="color:var(--white);">intent, actors, actions, conditions, and constraints</strong> from the raw requirement text</li>
+    <li style="margin-bottom:8px;">Uses the <strong style="color:var(--white);">Requirement Parser</strong> (no AI needed) to extract every RN and CA with their exact description text</li>
+  </ul>
+  <p>Corporate KB context is injected into the prompt before the AI call, so the Normalizer already knows about relevant historical patterns when it runs.</p>
+
+  <h2>Stage 2 — Parallel Engines</h2>
+  <p>Six engines run simultaneously after the Normalizer:</p>
+  <table>
+    <thead><tr><th>Engine</th><th>Output</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Ambiguity</strong></td><td>Subjective terms, missing conditions, inconsistencies</td><td>QA, PO</td></tr>
+      <tr><td><strong>Risk</strong></td><td>Functional, security, regulatory, technical risks with severity</td><td>QA, Audit</td></tr>
+      <tr><td><strong>Rules</strong></td><td>Explicit and implicit business rules extracted</td><td>QA, Dev</td></tr>
+      <tr><td><strong>Gap</strong></td><td>Missing scenarios, absent dependencies, incomplete flows</td><td>QA, PO, Dev</td></tr>
+      <tr><td><strong>Coverage</strong></td><td>Covered vs uncovered acceptance criteria</td><td>QA</td></tr>
+      <tr><td><strong>Inference</strong></td><td>Implicit FRs and NFRs derived from RNs, CAs, risks, domain</td><td>PO, Dev</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Stage 2.5 — Knowledge Aggregator + Traceability</h2>
+  <p>These two engines run in parallel after the 6 engines above but before Synthesis:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:8px;"><strong style="color:var(--white);">Knowledge Aggregator</strong> — fetches all historical data for this story: previous versions, defects, KB entries, family links. No AI call — pure data aggregation.</li>
+    <li style="margin-bottom:8px;"><strong style="color:var(--white);">Traceability Engine</strong> — generates RTM, test scenarios, and test cases using the structured RNs and CAs from the parser combined with all engine findings.</li>
+  </ul>
+
+  <h2>Stage 3 — Synthesis</h2>
+  <p>The Synthesis Engine receives all findings from every engine plus the historical context from the Knowledge Aggregator. It produces:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:6px;">An <strong style="color:var(--white);">overall quality score</strong> (0–100)</li>
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Cross-engine correlations</strong> — insights that no single engine could produce alone</li>
+    <li style="margin-bottom:6px;">A <strong style="color:var(--white);">verdict</strong>: is this requirement ready for development and testing?</li>
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Top actions</strong> to address before proceeding</li>
+  </ul>
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body"><strong>Example correlation:</strong> "Risk RSK-003 (unauthorized access via URL) has no corresponding negative test case in the Coverage Engine output — CT covering RN-05 and CA-06 is critical before go-live."</div>
+  </div>
+</section>
+
+<!-- ══ KNOWLEDGE ══ -->
+<section class="section" id="sec-knowledge">
+  <div class="breadcrumb">Docs <span>/</span> Knowledge Layer</div>
+  <h1>Knowledge <em>Layer</em></h1>
+  <p class="lead">The corporate memory that makes the system smarter with every analysis.</p>
+
+  <h2>What it stores</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Code</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td>Business Pattern</td><td><code>padrao</code></td><td>Alphabetical ordering rule, session timeout behavior</td></tr>
+      <tr><td>Historical Bug</td><td><code>bug</code></td><td>Auth bypass found in BUG-089, cache invalidation failure</td></tr>
+      <tr><td>Integration</td><td><code>integ</code></td><td>ISIN API behavior, Bloomberg timeout patterns</td></tr>
+      <tr><td>Glossary</td><td><code>gloss</code></td><td>ISIN = 12-char ISO 6166 code, WCAG 2.1 AA definition</td></tr>
+      <tr><td>Compliance</td><td><code>comp</code></td><td>LGPD audit log requirements, ISO 6166 validation</td></tr>
+      <tr><td>Risk</td><td><code>risco</code></td><td>Financial flows require audit trail, MFA for sensitive ops</td></tr>
+      <tr><td>QA Heuristic</td><td><code>heur</code></td><td>ISIN flows without audit generated regulatory failures in 8 analyses</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Semantic Search</h2>
+  <p>The system uses <strong>TF-IDF semantic search</strong> to find related KB entries by meaning — not just exact keyword matching.</p>
+  <div class="callout success">
+    <div class="callout-icon">✓</div>
+    <div class="callout-body">Searching for <em>"payment timeout"</em> finds <em>"gateway failure"</em> entries. Searching for <em>"account lockout"</em> finds <em>"invalid attempt blocking"</em>.</div>
+  </div>
+  <p>Each engine receives a specialized context slice:</p>
+  <table>
+    <thead><tr><th>Engine</th><th>Receives from KB</th></tr></thead>
+    <tbody>
+      <tr><td>Risk Engine</td><td>Historical risks only (<code>risco</code>, <code>comp</code>)</td></tr>
+      <tr><td>Gap Engine</td><td>Recurring gaps and patterns (<code>padrao</code>, <code>heur</code>)</td></tr>
+      <tr><td>Synthesis</td><td>Correlations and organizational context (<code>heur</code>, <code>risco</code>, <code>comp</code>)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Auto-enrichment</h2>
+  <p>After every completed analysis, the Knowledge Enricher automatically extracts learnable patterns and saves them to the KB:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:6px;">Critical/high <strong style="color:var(--white);">risks</strong> → saved as <code>risco</code> entries</li>
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Gaps</strong> → saved as <code>padrao</code> entries</li>
+    <li style="margin-bottom:6px;">High-priority <strong style="color:var(--white);">NF requirements</strong> → saved as <code>comp</code> or <code>risco</code></li>
+    <li style="margin-bottom:6px;"><strong style="color:var(--white);">Synthesis correlations</strong> → saved as <code>heur</code></li>
+  </ul>
+  <p>Duplicate detection prevents noise — if a similar entry already exists, the system increments its occurrence count instead of creating a new entry.</p>
+
+  <h2>Confidence Scoring</h2>
+  <table>
+    <thead><tr><th>Occurrences</th><th>Confidence</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>30%</td><td>First occurrence — low signal</td></tr>
+      <tr><td>3</td><td>60%</td><td>Emerging pattern</td></tr>
+      <tr><td>5</td><td>75%</td><td>Established pattern</td></tr>
+      <tr><td>8+</td><td>90%+</td><td>Strong organizational pattern — high priority in prompts</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Version Delta &amp; Impact</h2>
+  <p>When a story is analyzed multiple times, the system computes the <strong>delta between versions</strong>:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:6px;">Which RNs were added, removed, or modified?</li>
+    <li style="margin-bottom:6px;">Which CAs changed?</li>
+    <li style="margin-bottom:6px;">What is the overall impact level? (none / low / medium / high / critical)</li>
+  </ul>
+  <p>The <strong>Impact Propagation</strong> then identifies which existing test cases and automations are affected by the detected changes — recommending re-execution or re-analysis.</p>
+</section>
+
+<!-- ══ TRACEABILITY ══ -->
+<section class="section" id="sec-traceability">
+  <div class="breadcrumb">Docs <span>/</span> Traceability &amp; RTM</div>
+  <h1>Traceability <em>&amp; RTM</em></h1>
+  <p class="lead">Full requirements traceability matrix generated automatically from your RNs and CAs.</p>
+
+  <h2>How the RTM is generated</h2>
+  <p>The Traceability Engine v2 uses the <strong>exact RN and CA texts</strong> extracted by the Requirement Parser — not AI-invented descriptions. Every test case references a real rule and a real criterion from your requirement.</p>
+
+  <h3>Test Case Format</h3>
+  <pre>CT-001 - RN-01 | CA-01: Card "Consulta de ISIN" displayed on Manager Home
+  RN-01: The functionality must be available via a card on the Manager Home
+  CA-01: A card with the title "Consulta de ISIN" must exist
+
+  Pre-conditions:
+  - Authenticated user with CONSULTA_ISIN_ACCESS permission
+
+  Test data:
+  - User: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="89e4e8e7e8eeecfbd6fcfaecfbc9eae6fbf9a7eae6e4">[email&#160;protected]</a> (valid permission)
+
+  Steps:
+  1. Navigate to Manager Home
+  2. Verify the "Consulta de ISIN" card is visible
+  3. Verify alphabetical ordering among other cards
+
+  Expected result: Card is displayed in alphabetical position per RN-02</pre>
+
+  <h2>RTM Columns</h2>
+  <div class="rtm-preview">
+    <div class="rtm-header">Requirements Traceability Matrix</div>
+    <table class="rtm-table">
+      <thead>
+        <tr>
+          <th>Test ID</th><th>RN</th><th>CA</th><th>Test Case Title</th><th>Risk</th><th>Gap</th><th>Priority</th><th>Automated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="id">CT-001</td><td class="rn">RN-01</td><td class="ca">CA-01</td>
+          <td>Card displayed on Manager Home</td><td>—</td><td>—</td>
+          <td><span class="tag">high</span></td><td class="ok">✓</td>
+        </tr>
+        <tr>
+          <td class="id">CT-005</td><td class="rn">RN-05</td><td class="ca">CA-06</td>
+          <td>Negative: access denied via direct URL</td>
+          <td class="risk"><span class="tag critical">RSK-003</span></td><td>—</td>
+          <td><span class="tag critical">critical</span></td><td class="ok">✓</td>
+        </tr>
+        <tr>
+          <td class="id">CT-013</td><td class="rn">RN-15</td><td class="ca">CA-13</td>
+          <td>Performance SLA 2s for 95% of requests</td>
+          <td>—</td><td><span class="tag high">GAP-002</span></td>
+          <td><span class="tag high">high</span></td><td class="ok">✓</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Scenario Coverage</h2>
+  <p>The Traceability Engine enforces coverage rules:</p>
+  <div class="callout success">
+    <div class="callout-icon">✓</div>
+    <div class="callout-body">Every RN must have at least one test case. Every CA must appear in at least one test case. Every identified risk generates a <strong>negative test case</strong>.</div>
+  </div>
+  <p>Coverage is reported by category:</p>
+  <table>
+    <thead><tr><th>Category</th><th>What it measures</th></tr></thead>
+    <tbody>
+      <tr><td>Functional</td><td>Happy-path and main business flows</td></tr>
+      <tr><td>Security</td><td>Authentication, authorization, data protection scenarios</td></tr>
+      <tr><td>Performance</td><td>SLA, timeout, load scenarios</td></tr>
+      <tr><td>Compliance</td><td>LGPD, regulatory, audit scenarios</td></tr>
+      <tr><td>Usability</td><td>Accessibility, error messages, UX edge cases</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══ INFERENCE ══ -->
+<section class="section" id="sec-inference">
+  <div class="breadcrumb">Docs <span>/</span> Requirements Inference</div>
+  <h1>Requirements <em>Inference</em></h1>
+  <p class="lead">Discover implicit requirements that nobody wrote but everyone expects.</p>
+
+  <h2>What it solves</h2>
+  <p>A requirement may state: <em>"RN-01: The system must block after 3 failed attempts."</em></p>
+  <p>But nobody wrote the implicit requirements that need to exist for this to work:</p>
+  <pre>RF-001 [functional] The system must maintain an attempt counter per user session
+RF-002 [functional] The system must provide an account unblocking mechanism
+RNF-001 [security]  The block must persist across sessions (not reset on browser close)
+RNF-002 [performance] Block decision must execute in under 200ms
+RNF-003 [compliance] All blocked attempts must be written to the audit log (LGPD)</pre>
+
+  <h2>Output structure</h2>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>id</strong></td><td>RF-001, RNF-003 etc.</td></tr>
+      <tr><td><strong>type</strong></td><td>RF (functional) or RNF (non-functional)</td></tr>
+      <tr><td><strong>category</strong></td><td>funcional / performance / seguranca / disponibilidade / compliance / usabilidade</td></tr>
+      <tr><td><strong>title</strong></td><td>Short, actionable requirement title</td></tr>
+      <tr><td><strong>description</strong></td><td>Full description of what must be implemented</td></tr>
+      <tr><td><strong>origin</strong></td><td>Which RN / CA / risk / gap originated this inference</td></tr>
+      <tr><td><strong>rationale</strong></td><td>Why this was inferred — the reasoning chain</td></tr>
+      <tr><td><strong>priority</strong></td><td>critical / high / medium / low</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">Inferred requirements are visible in the <strong>RF/RNF tab</strong> of <code>story.html</code> and also appear in Artifact Generation — POs receive acceptance criteria derived from inferred FRs, and Audit receives NFRs in the Risk Report.</div>
+  </div>
+</section>
+
+<!-- ══ ARTIFACTS ══ -->
+<section class="section" id="sec-artifacts">
+  <div class="breadcrumb">Docs <span>/</span> Artifact Generation</div>
+  <h1>Artifact <em>Generation</em></h1>
+  <p class="lead">9 ready-to-use artifacts generated from real pipeline data — not generic templates.</p>
+
+  <h2>What makes v2 different</h2>
+  <p>Previous artifact generators use a generic prompt and produce generic output. The AQuA Intelligence Platform uses the <strong>actual findings</strong> from every engine:</p>
+  <table>
+    <thead><tr><th></th><th>Generic generator</th><th>AQuA Intelligence Platform</th></tr></thead>
+    <tbody>
+      <tr><td>Gherkin scenarios</td><td>Invented from thin air</td><td>Generated from SC-001, SC-002 produced by Traceability Engine</td></tr>
+      <tr><td>Test case IDs</td><td>Random / hallucinated</td><td>CT-001 linked to exact RN-01 and CA-01 texts</td></tr>
+      <tr><td>Risk report</td><td>Generic risk categories</td><td>Real Risk Engine findings with historical KB correlation %</td></tr>
+      <tr><td>RTM</td><td>Made up</td><td>Exact RTM from Traceability Engine, all fields populated</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Artifact profiles</h2>
+  <div class="artifact-grid">
+    <div class="artifact-card">
+      <div class="artifact-profile" style="color:var(--teal)">🧪 QA Profile</div>
+      <ul class="artifact-list">
+        <li>Gherkin / BDD (.feature)</li>
+        <li>Detailed Test Cases (CT format)</li>
+        <li>Evidence Template (per CT)</li>
+      </ul>
+    </div>
+    <div class="artifact-card">
+      <div class="artifact-profile" style="color:var(--accent)">⚙ Dev Profile</div>
+      <ul class="artifact-list">
+        <li>Automation Skeletons (RF + Playwright + pytest)</li>
+        <li>Technical Gap Analysis</li>
+      </ul>
+    </div>
+    <div class="artifact-card">
+      <div class="artifact-profile" style="color:#b594ff)">📋 PO Profile</div>
+      <ul class="artifact-list">
+        <li>Acceptance Criteria (enriched)</li>
+        <li>Functional Gap Analysis</li>
+        <li>Business Value Report</li>
+      </ul>
+    </div>
+    <div class="artifact-card">
+      <div class="artifact-profile" style="color:var(--rose)">🔐 Audit Profile</div>
+      <ul class="artifact-list">
+        <li>Risk Report (with KB correlation)</li>
+        <li>Exportable RTM (full format)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Gherkin example</h2>
+  <pre>@critical @regression @security @RN-05 @CA-06 @RSK-003
+Scenario: CT-005 - Access denied via direct URL without permission
+  Given an authenticated user without CONSULTA_ISIN_ACCESS permission
+  When the user navigates directly to /consulta-isin
+  Then the system blocks access with HTTP 403
+  And records an audit event with user ID, IP, and timestamp (RN-28)
+  And displays a standard access-denied message per platform pattern (CA-06)</pre>
+
+  <h2>Generating artifacts</h2>
+  <p>Artifacts are generated on-demand from an existing analysis:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:8px;">In the Hub: open module 5 → select profile → click <strong>⚡ Generate</strong></li>
+    <li style="margin-bottom:8px;">In story.html: go to <strong>Artifacts tab</strong> → click ⚡ on any version</li>
+  </ul>
+  <p>Generated artifacts are <strong>saved to the database</strong> and persist across sessions. Each artifact has a copy button and a download button with the correct extension (<code>.feature</code>, <code>.robot</code>, <code>.md</code>).</p>
+</section>
+
+<!-- ══ API ══ -->
+<section class="section" id="sec-api">
+  <div class="breadcrumb">Docs <span>/</span> API Reference</div>
+  <h1>API <em>Reference</em></h1>
+  <p class="lead">All endpoints exposed by the backend. Base URL: <code>http://localhost:8000</code></p>
+
+  <h2>Analysis</h2>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="endpoint-path">/api/v1/analyze</span>
+    </div>
+    <div class="endpoint-desc">Run the full pipeline on a requirement. Returns complete analysis with all engine outputs.</div>
+  </div>
+  <pre>{
+  "requirement": "BSAG-1724 [Consulta de ISIN] ...",
+  "context": "optional additional context",
+  "project_id": "optional project ID",
+  "engines": ["ambiguity","risk","rules","gap","coverage","inference"]
+}</pre>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/history</span>
+    </div>
+    <div class="endpoint-desc">List recent analyses. Query params: <code>?limit=20&project_id=X</code></div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/history/{id}</span>
+    </div>
+    <div class="endpoint-desc">Get a specific analysis with full result JSON including all engine outputs.</div>
+  </div>
+
+  <h2>Stories</h2>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/stories/{story_id}/versions</span>
+    </div>
+    <div class="endpoint-desc">All versions analyzed for a story ID.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/stories/{story_id}/delta</span>
+    </div>
+    <div class="endpoint-desc">Delta between two versions. Params: <code>?v_from=1&v_to=3</code></div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/stories/{story_id}/impact</span>
+    </div>
+    <div class="endpoint-desc">Full impact analysis: delta + propagation to affected test cases.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/stories/{story_id}/defects</span>
+    </div>
+    <div class="endpoint-desc">All defects linked to this story.</div>
+  </div>
+
+  <h2>Artifacts</h2>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="endpoint-path">/api/v1/artifacts/generate</span>
+    </div>
+    <div class="endpoint-desc">Generate artifacts from an existing analysis.</div>
+  </div>
+  <pre>{
+  "analysis_id": "uuid-of-analysis",
+  "profiles": ["qa", "dev", "po", "audit"]  // omit for all profiles
+}</pre>
+
+  <h2>Knowledge Base</h2>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method get">GET</span>
+      <span class="endpoint-path">/api/v1/knowledge/stats</span>
+    </div>
+    <div class="endpoint-desc">KB statistics: total entries, auto-extracted, high-confidence, by category.</div>
+  </div>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method post">POST</span>
+      <span class="endpoint-path">/api/v1/knowledge/search/semantic</span>
+    </div>
+    <div class="endpoint-desc">Semantic TF-IDF search over the KB.</div>
+  </div>
+  <pre>{
+  "query": "payment timeout failure",
+  "engine": "risk",        // risk | gap | synthesis | normalizer
+  "project_id": "optional"
+}</pre>
+</section>
+
+<!-- ══ CONFIG ══ -->
+<section class="section" id="sec-config">
+  <div class="breadcrumb">Docs <span>/</span> Configuration</div>
+  <h1><em>Configuration</em></h1>
+  <p class="lead">All configuration lives in <code>.env</code>. Never commit this file.</p>
+
+  <h2>Full .env reference</h2>
+  <table>
+    <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>AI_PROVIDER</code></td><td><code>b3gpt</code></td><td>Provider: <code>b3gpt</code> | <code>anthropic</code> | <code>gemini</code></td></tr>
+      <tr><td><code>AI_MODEL</code></td><td>—</td><td>Model name as recognized by the provider</td></tr>
+      <tr><td><code>AI_API_KEY</code></td><td>—</td><td>API key / token for authentication</td></tr>
+      <tr><td><code>BASE_URL</code></td><td>—</td><td>Base URL for Azure OpenAI compatible providers</td></tr>
+      <tr><td><code>ENGINE_MAX_TOKENS</code></td><td><code>8000</code></td><td>Max output tokens per engine call. Increase for large requirements.</td></tr>
+      <tr><td><code>ENGINE_TIMEOUT</code></td><td><code>120</code></td><td>Seconds before an engine call times out</td></tr>
+      <tr><td><code>ENGINE_CONCURRENCY</code></td><td><code>5</code></td><td>Max parallel engine calls</td></tr>
+      <tr><td><code>ENGINE_LANGUAGE</code></td><td><code>portuguese</code></td><td>Language for all AI output text</td></tr>
+      <tr><td><code>DB_PATH</code></td><td><code>qa_system.db</code></td><td>SQLite database file path</td></tr>
+      <tr><td><code>APP_PORT</code></td><td><code>8000</code></td><td>FastAPI server port</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Switching AI providers</h2>
+  <p>To switch from Gemini to Azure OpenAI — just update <code>.env</code> and restart:</p>
+  <pre># Before (Gemini)
+AI_PROVIDER=gemini
+AI_MODEL=gemini-2.0-flash
+AI_API_KEY=AIza...
+
+# After (Azure OpenAI)
+AI_PROVIDER=b3gpt
+AI_MODEL=gpt4o-mini
+AI_API_KEY=your-token
+BASE_URL=https://your-corporate-endpoint/openai</pre>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠</div>
+    <div class="callout-body">After changing providers, restart the server. The provider is cached as a singleton — changes only take effect on restart.</div>
+  </div>
+
+  <h2>Tuning for large requirements</h2>
+  <p>Requirements with 20+ RNs and 20+ CAs (like a full BSAG story) need more tokens for the Traceability Engine to generate complete coverage:</p>
+  <pre>ENGINE_MAX_TOKENS=8000   # minimum for large stories
+ENGINE_TIMEOUT=180       # increase if traceability times out</pre>
+</section>
+
+<!-- ══ FAQ ══ -->
+<section class="section" id="sec-faq">
+  <div class="breadcrumb">Docs <span>/</span> FAQ &amp; Troubleshooting</div>
+  <h1>FAQ &amp; <em>Troubleshooting</em></h1>
+
+  <h2>Common issues</h2>
+
+  <h3>Server fails to start — circular import error</h3>
+  <p>This happens when <code>engines/__init__.py</code> has imports. Keep it empty:</p>
+  <pre># engines/__init__.py — keep this empty
+__all__ = ["normalizer", "ambiguity", "risk", "rules", "gap",
+           "coverage", "synthesis", "knowledge_aggregator", "traceability"]</pre>
+  <p>Import engines in orchestrator via <code>import engines.X as X_mod</code> — never <code>from engines import X</code>.</p>
+
+  <h3>Analysis returns empty engine results</h3>
+  <p>Check the <code>error</code> field in the response. Common causes:</p>
+  <ul style="margin:12px 0 16px 20px;color:var(--soft);">
+    <li style="margin-bottom:6px;">API key invalid or expired → check <code>AI_API_KEY</code> in .env</li>
+    <li style="margin-bottom:6px;">Provider endpoint unreachable → check network / VPN</li>
+    <li style="margin-bottom:6px;">Token limit exceeded → increase <code>ENGINE_MAX_TOKENS</code></li>
+    <li style="margin-bottom:6px;">Engine timeout → increase <code>ENGINE_TIMEOUT</code></li>
+  </ul>
+
+  <h3>Traceability generates only 1-2 test cases</h3>
+  <p>This is a token limit issue. The Traceability Engine needs more output space for large requirements:</p>
+  <pre>ENGINE_MAX_TOKENS=8000</pre>
+  <p>The engine automatically doubles its token allocation for traceability (<code>max_tokens * 2</code>).</p>
+
+  <h3>Database schema error on startup</h3>
+  <p>After modifying <code>schemas.py</code> or <code>database.py</code>, the existing database is incompatible:</p>
+  <pre>del qa_system.db
+py -3.12 seed_knowledge.py</pre>
+  <div class="callout danger">
+    <div class="callout-icon">⚠</div>
+    <div class="callout-body"><strong>This deletes all saved analyses and KB entries.</strong> Export or back up the database before deleting if you need to preserve data.</div>
+  </div>
+
+  <h3>Frontend not loading (Illegal return statement)</h3>
+  <p>This is a JavaScript syntax error caused by an orphaned code block outside a function. Usually happens after an edit that injects code incorrectly. Check the browser console for the line number, then verify that every <code>return</code> statement is inside a function.</p>
+
+  <h3>Knowledge Layer shows 0 auto-extracted entries</h3>
+  <p>The <code>knowledge_enricher.py</code> must be in <code>backend/engines/</code>. Also verify the analysis completed successfully — enrichment only runs after a successful pipeline execution.</p>
+
+  <h2>Frequently asked questions</h2>
+
+  <h3>Can I use the system without a VPN / corporate network?</h3>
+  <p>Yes, if you configure a public AI provider (Gemini or Anthropic). The B3GPT provider requires access to the corporate API endpoint.</p>
+
+  <h3>Why does the system sometimes give different results for the same requirement?</h3>
+  <p>LLMs are non-deterministic by nature. Temperature is set to 0.3 (low) to minimize variance, but some variation is expected. The structured elements (RN/CA extraction, RTM format) are deterministic — only the prose descriptions vary.</p>
+
+  <h3>Can I add my own KB entries?</h3>
+  <p>Yes — via the API:</p>
+  <pre>POST /api/v1/knowledge
+{
+  "category": "risco",
+  "title": "ISIN flows require mandatory audit trail",
+  "description": "Any financial operation involving ISIN codes...",
+  "project_id": "optional"
+}</pre>
+  <p>Or edit <code>seed_knowledge.py</code> and re-run it to populate the initial KB.</p>
+
+  <h3>How do I export the RTM to Jira or Xray?</h3>
+  <p>Currently, artifacts are exported as Markdown files. Xray and Jira direct export are on the roadmap. In the meantime, the Markdown RTM can be converted to CSV for import.</p>
+
+  <footer class="doc-footer">
+    <span>AQuA Intelligence Platform Documentation v1.0</span>
+    <span>Built with FastAPI + SQLite + TF-IDF</span>
+  </footer>
+</section>
+
+</main>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── Navigation ──
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-link, .nav-sub').forEach(a => {
+    a.classList.remove('active');
+    a.removeAttribute('aria-current');
+  });
+
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+
+  // Mark active nav (use the clicked button when provided, otherwise match by onclick text)
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-current','page');
+  } else {
+    document.querySelectorAll('.nav-link, .nav-sub').forEach(a => {
+      const oc = a.getAttribute('onclick');
+      if (oc && oc.includes("'" + id + "'")) {
+        a.classList.add('active');
+        a.setAttribute('aria-current','page');
+      }
+    });
+  }
+
+  // Scroll to top
+  const mc = document.getElementById('main-content');
+  if (mc) mc.scrollTop = 0;
+  window.scrollTo(0, 0);
+
+  // Close mobile sidebar
+  const sb = document.getElementById('sidebar');
+  const tg = document.getElementById('sidebar-toggle');
+  if (sb && sb.classList.contains('open')) {
+    sb.classList.remove('open');
+    if (tg) tg.setAttribute('aria-expanded','false');
+  }
+}
+
+// ── Mobile sidebar toggle ──
+(function(){
+  const tg = document.getElementById('sidebar-toggle');
+  const sb = document.getElementById('sidebar');
+  if (tg && sb) {
+    tg.addEventListener('click', () => {
+      const open = sb.classList.toggle('open');
+      tg.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+})();
+
+// ── Search ──
+document.getElementById('doc-search').addEventListener('input', function(e) {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) return;
+
+  const sections = {
+    overview: ['overview','what is','value','who','capabilities'],
+    quickstart: ['install','setup','start','run','prereq','quick'],
+    concepts: ['concept','rn','ca','version','kb','knowledge base','story id'],
+    pipeline: ['pipeline','how','normalizer','parallel','synthesis','engine'],
+    knowledge: ['knowledge','semantic','search','confidence','enrichment','delta','impact'],
+    traceability: ['rtm','traceability','test case','ct-','scenario','matrix'],
+    inference: ['inference','implicit','rf','rnf','non-functional'],
+    artifacts: ['artifact','gherkin','bdd','robot','playwright','po','audit'],
+    api: ['api','endpoint','post','get','http','rest'],
+    config: ['config','.env','token','provider','azure','openai','model'],
+    faq: ['faq','error','troubleshoot','problem','issue','fix'],
+  };
+
+  let best = null, bestScore = 0;
+  Object.entries(sections).forEach(([id, keywords]) => {
+    const score = keywords.filter(k => q.includes(k) || k.includes(q)).length;
+    if (score > bestScore) { bestScore = score; best = id; }
+  });
+
+  if (best && bestScore > 0) show(best);
+});
+
+// ── Keyboard navigation ──
+// Buttons já são focáveis nativamente — listener removido pois os <a role="button"> antigos viraram <button>.
+</script>
+</body>
+</html>

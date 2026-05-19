@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQuA Intelligence Platform — Live Demo · EDUIA-1000</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Inconsolata:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060810;--s1:#090c14;--s2:#0d1120;--s3:#111829;--s4:#162035;
+  --b1:#243453;--b2:#324968;--b3:#42597d;
+  --muted:#7a96bd;--soft:#9ab4d3;--body:#b3c8de;--bright:#cfdfee;--white:#eef5fa;
+  --font:'Sora',sans-serif;--mono:'Inconsolata',monospace;
+  --m1:#7aaaff;--m2:#b594ff;--m3:#5fd6e6;--m4:#ff7575;--m5:#ffc070;
+  --ok:#6dcfa6;--warn:#ffc070;--err:#ff7575;
+  --focus:#ffc070;
+  --topbar-h:56px;
+}
+html{height:100%;font-size:16px;}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--body);
+  display:flex;flex-direction:column;font-size:16px;
+  min-height:100vh;line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+
+/* WCAG 2.4.7 — foco visível */
+:focus-visible{outline:2px solid var(--focus)!important;outline-offset:2px!important;border-radius:3px;}
+:focus:not(:focus-visible){outline:none;}
+
+/* Screen reader only */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+.skip-link{
+  position:fixed;top:-100px;left:16px;z-index:9999;
+  background:var(--m1);color:#0a1020;
+  padding:12px 22px;border-radius:6px;
+  font-size:14px;font-weight:700;text-decoration:none;
+  transition:top .15s;
+}
+.skip-link:focus{top:16px;}
+
+/* WCAG 2.3.3 — respeita preferência de movimento */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* WCAG — floor para inline 8/9/10px */
+[style*="font-size:8px"],[style*="font-size: 8px"]{font-size:11px!important;}
+[style*="font-size:9px"],[style*="font-size: 9px"]{font-size:12px!important;}
+[style*="font-size:10px"],[style*="font-size: 10px"]{font-size:12px!important;}
+
+/* ── Demo banner ── */
+.demo-banner{
+  background:linear-gradient(90deg,rgba(126,179,255,.15),rgba(181,148,255,.1));
+  border-bottom:1px solid rgba(126,179,255,.25);
+  padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:13px;color:var(--body);
+  flex-shrink:0;
+}
+.demo-banner .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.demo-banner strong{color:var(--m1);}
+.demo-banner a{color:var(--m2);text-decoration:none;margin-left:auto;padding:6px 12px;border:1px solid rgba(181,148,255,.4);border-radius:4px;font-weight:500;min-height:32px;display:inline-flex;align-items:center;gap:4px;}
+.demo-banner a:hover,.demo-banner a:focus-visible{background:rgba(181,148,255,.15);color:var(--white);}
+
+/* ── Topbar ── */
+.topbar{
+  min-height:var(--topbar-h);display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:10px 20px;background:var(--s1);border-bottom:1px solid var(--b1);
+  flex-shrink:0;
+}
+.tb-logo{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tb-logo-dot{width:10px;height:10px;border-radius:50%;background:var(--m1);flex-shrink:0;}
+.tb-version{font-size:12px;color:var(--soft);padding:4px 10px;border:1px solid var(--b2);border-radius:4px;font-family:var(--mono);}
+.tb-status{font-size:12px;color:var(--ok);font-family:var(--mono);}
+.tb-req{flex:1 1 280px;max-width:540px;min-width:0;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:9px 14px;font-family:var(--mono);font-size:13px;color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tb-req strong{color:var(--m1);}
+.tb-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.btn{padding:10px 16px;border-radius:6px;font-family:var(--font);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .2s;min-height:40px;display:inline-flex;align-items:center;gap:6px;}
+.btn-ghost{background:var(--s3);color:var(--bright);border:1px solid var(--b2);}
+.btn-ghost:hover,.btn-ghost:focus-visible{background:var(--s4);color:var(--white);border-color:var(--m1);}
+.btn-primary{background:var(--m1);color:#050c1a;}
+.btn-primary:hover,.btn-primary:focus-visible{background:#a3c3ff;box-shadow:0 0 0 3px rgba(122,170,255,.3);}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;min-height:0;}
+
+/* ── Sidebar (history) ── */
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--s1);border-right:1px solid var(--b1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-hd{padding:14px 16px;font-size:12px;font-family:var(--mono);color:var(--soft);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--b1);font-weight:600;}
+.hist-list{overflow-y:auto;flex:1;}
+.hist-item{
+  padding:12px 16px;border-bottom:1px solid var(--b1);cursor:pointer;
+  transition:background .15s;
+  width:100%;text-align:left;background:transparent;border-left:none;border-right:none;border-top:none;color:inherit;font-family:inherit;
+}
+.hist-item:hover,.hist-item:focus-visible{background:var(--s2);}
+.hist-item.active{background:rgba(127,170,255,.1);border-left:3px solid var(--m1);}
+.hi-id{font-family:var(--mono);font-size:12px;color:var(--m1);font-weight:700;display:flex;align-items:center;gap:6px;}
+.hi-title{font-size:13px;color:var(--bright);margin:5px 0;line-height:1.35;}
+.hi-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.hi-score{font-family:var(--mono);font-size:15px;font-weight:700;}
+.hi-risk{font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;}
+.hi-risk.high{background:rgba(255,192,112,.15);color:var(--warn);}
+.hi-risk.critical{background:rgba(255,117,117,.15);color:var(--err);}
+.hi-risk.medium{background:rgba(127,170,255,.15);color:var(--m1);}
+.hi-date{font-size:11px;font-family:var(--mono);color:var(--soft);margin-left:auto;}
+.hi-ver{font-size:11px;font-family:var(--mono);color:var(--soft);}
+
+/* ── Hub ── */
+.hub{flex:1;overflow-y:auto;padding:22px 26px;min-width:0;}
+
+/* ── Flow bar ── */
+.flow-bar{
+  display:flex;align-items:flex-start;gap:0;
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:14px 18px;margin-bottom:20px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 14px;flex-shrink:0;}
+.flow-dot{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;font-weight:700;color:#0a1020;
+  transition:all .3s;
+}
+.flow-dot.done{box-shadow:0 0 12px rgba(109,207,166,.5);}
+.flow-label{font-size:12px;font-family:var(--mono);color:var(--soft);text-align:center;font-weight:500;}
+.flow-score{font-size:12px;font-family:var(--mono);font-weight:700;min-height:14px;}
+.flow-arrow{color:var(--b3);font-size:18px;margin-top:8px;flex-shrink:0;}
+
+/* ── Module grid ── */
+.module-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px;}
+
+.mod-card{
+  background:var(--s2);border:1px solid var(--b1);border-radius:10px;
+  overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;
+  width:100%;text-align:left;font-family:inherit;color:inherit;border-top:1px solid var(--b1);
+  display:flex;flex-direction:column;
+}
+.mod-card:hover,.mod-card:focus-visible{border-color:var(--m1);transform:translateY(-2px);}
+.mod-card.active-card{border-color:var(--m1);}
+
+.mc-header{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--b1);}
+.mc-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#0a1020;flex-shrink:0;}
+.mc-info{flex:1;min-width:0;}
+.mc-name{font-size:14px;font-weight:600;color:var(--white);line-height:1.3;}
+.mc-tags{font-size:12px;font-family:var(--mono);color:var(--soft);margin-top:2px;}
+.mc-score{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1;}
+.mc-body{padding:14px 16px;flex:1;}
+.mc-finding{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;}
+.mf-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.mf-text{font-size:13px;color:var(--body);line-height:1.5;}
+.mc-open{width:100%;padding:11px;background:var(--s3);border:none;border-top:1px solid var(--b1);font-family:var(--mono);font-size:12px;color:var(--bright);cursor:pointer;transition:all .2s;font-weight:500;}
+.mc-open:hover,.mc-open:focus-visible{background:var(--s4);color:var(--white);}
+
+/* ── Synthesis ── */
+.synth-card{
+  background:var(--s2);border:1px solid var(--b1);border-radius:10px;
+  overflow:hidden;margin-bottom:16px;
+}
+.sc-header{padding:16px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--b1);flex-wrap:wrap;}
+.sc-score-big{font-family:var(--mono);font-size:42px;font-weight:700;line-height:1;}
+.sc-meta{flex:1 1 260px;min-width:0;}
+.sc-verdict{font-size:15px;font-weight:600;color:var(--white);line-height:1.4;}
+.sc-summary{font-size:13px;color:var(--body);margin-top:5px;line-height:1.55;}
+.sc-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.sc-col{padding:16px 18px;}
+.sc-col-title{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--soft);margin-bottom:12px;font-weight:600;}
+.sc-item{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;}
+.sc-sev{font-size:11px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:3px;flex-shrink:0;margin-top:2px;}
+.sc-sev.critical{background:rgba(255,117,117,.15);color:var(--err);}
+.sc-sev.high{background:rgba(255,192,112,.15);color:var(--warn);}
+.sc-sev.medium{background:rgba(127,170,255,.15);color:var(--m1);}
+.sc-text{font-size:13px;color:var(--body);line-height:1.5;}
+
+/* ── Inference card ── */
+.inf-card{
+  background:var(--s2);border:1px solid var(--b1);border-top:3px solid var(--m5);
+  border-radius:10px;overflow:hidden;margin-bottom:16px;
+}
+.inf-header{padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--b1);}
+.inf-count{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--m5);line-height:1;}
+.inf-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.inf-col{padding:14px 18px;}
+.inf-col-title{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-weight:600;}
+.inf-item{padding:9px 0;border-bottom:1px solid var(--b1);display:flex;gap:10px;align-items:flex-start;}
+.inf-id{font-size:12px;font-family:var(--mono);font-weight:700;flex-shrink:0;min-width:58px;}
+.inf-text{font-size:12px;color:var(--body);line-height:1.5;}
+.inf-badge{font-size:11px;font-family:var(--mono);font-weight:600;padding:2px 7px;border-radius:3px;margin-left:auto;flex-shrink:0;}
+
+/* ── Module overlay ── */
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(6,8,16,.96);
+  z-index:50;overflow-y:auto;padding:24px;
+}
+.overlay.open{display:block;}
+.ov-inner{max-width:1000px;margin:0 auto;}
+.ov-topbar{display:flex;align-items:center;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+.ov-back{padding:9px 14px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;color:var(--bright);font-family:var(--mono);font-size:13px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;gap:6px;}
+.ov-back:hover,.ov-back:focus-visible{color:var(--white);background:var(--s3);border-color:var(--m1);}
+.ov-title{font-size:20px;font-weight:600;color:var(--white);}
+.ov-badge{font-size:12px;font-family:var(--mono);font-weight:600;padding:5px 12px;border-radius:14px;border:1px solid;}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--b1);margin-bottom:22px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tab{padding:11px 18px;font-family:var(--mono);font-size:13px;color:var(--soft);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:transparent;border-top:none;border-left:none;border-right:none;font-weight:500;min-height:42px;white-space:nowrap;}
+.tab:hover,.tab:focus-visible{color:var(--white);}
+.tab.active,.tab[aria-selected="true"]{color:var(--m1);border-bottom-color:var(--m1);font-weight:600;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* ── Findings list ── */
+.finding{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.finding-hd{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.finding-id{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--soft);}
+.finding-sev{font-size:11px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:3px;text-transform:uppercase;}
+.finding-sev.critical{background:rgba(255,117,117,.15);color:var(--err);}
+.finding-sev.high{background:rgba(255,192,112,.15);color:var(--warn);}
+.finding-sev.medium{background:rgba(127,170,255,.15);color:var(--m1);}
+.finding-sev.low{background:rgba(109,207,166,.15);color:var(--ok);}
+.finding-title{font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px;line-height:1.4;}
+.finding-desc{font-size:13px;color:var(--body);line-height:1.6;}
+.finding-sug{font-size:13px;color:var(--m1);margin-top:8px;padding-top:8px;border-top:1px solid var(--b1);}
+
+/* ── RTM table ── */
+.rtm-wrap{background:var(--s2);border:1px solid var(--b1);border-radius:8px;overflow:hidden;}
+.rtm-hd{padding:12px 16px;background:var(--s3);border-bottom:1px solid var(--b1);font-size:12px;font-family:var(--mono);color:var(--m3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+table.rtm{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;}
+table.rtm th{padding:10px 12px;text-align:left;color:var(--soft);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--b1);background:var(--s3);}
+table.rtm td{padding:10px 12px;border-bottom:1px solid rgba(36,52,83,.6);color:var(--body);}
+table.rtm td.ct{color:var(--m3);font-weight:700;}
+table.rtm td.rn{color:var(--m2);}
+table.rtm td.ca{color:var(--m3);}
+table.rtm td.risk{color:var(--err);}
+table.rtm td.ok{color:var(--ok);font-size:14px;text-align:center;}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-weight:600;text-transform:uppercase;}
+.pill.critical{background:rgba(255,117,117,.15);color:var(--err);}
+.pill.high{background:rgba(255,192,112,.15);color:var(--warn);}
+.pill.medium{background:rgba(127,170,255,.15);color:var(--m1);}
+.pill.low{background:rgba(109,207,166,.15);color:var(--ok);}
+
+/* ── Code block ── */
+pre.artifact{
+  background:var(--s1);border:1px solid var(--b1);border-radius:8px;
+  padding:18px;overflow-x:auto;font-family:var(--mono);font-size:13px;
+  color:var(--body);line-height:1.7;white-space:pre;
+}
+.art-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.art-title{font-size:14px;font-weight:600;color:var(--white);}
+.art-format{font-size:11px;font-family:var(--mono);font-weight:600;padding:3px 10px;border-radius:3px;background:rgba(95,214,230,.15);color:var(--m3);border:1px solid rgba(95,214,230,.3);}
+.art-copy{margin-left:auto;padding:7px 14px;background:var(--s3);border:1px solid var(--b2);border-radius:5px;font-family:var(--mono);font-size:12px;color:var(--bright);cursor:pointer;min-height:34px;}
+.art-copy:hover,.art-copy:focus-visible{color:var(--white);background:var(--s4);border-color:var(--m1);}
+
+/* ── Delta badge ── */
+.delta{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;}
+.delta.up{background:rgba(109,207,166,.15);color:var(--ok);}
+.delta.down{background:rgba(255,117,117,.15);color:var(--err);}
+.delta.same{background:rgba(127,170,255,.15);color:var(--m1);}
+
+/* ── Version timeline ── */
+.ver-item{
+  background:var(--s2);border:1px solid var(--b1);border-radius:8px;
+  padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:border-color .15s;
+}
+.ver-item:hover,.ver-item:focus-within{border-color:var(--b2);}
+.ver-item.active-ver{border-color:var(--m1);}
+.ver-hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.ver-badge{width:34px;height:34px;border-radius:50%;background:var(--m1);color:#050c1a;font-family:var(--mono);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ver-meta{flex:1;min-width:0;}
+.ver-date{font-size:12px;font-family:var(--mono);color:var(--soft);}
+.ver-scores{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;}
+.ver-score-val{font-family:var(--mono);font-size:16px;font-weight:700;}
+.ver-score-lbl{font-size:11px;font-family:var(--mono);color:var(--soft);text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── Delta panel ── */
+.delta-panel{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:16px;margin-top:14px;}
+.delta-title{font-size:14px;font-weight:600;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.delta-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--b1);align-items:flex-start;flex-wrap:wrap;}
+.delta-action{font-size:12px;font-family:var(--mono);min-width:88px;font-weight:600;}
+.delta-action.added{color:var(--ok);}
+.delta-action.removed{color:var(--err);}
+.delta-action.modified{color:var(--warn);}
+.delta-id{font-size:12px;font-family:var(--mono);font-weight:700;color:var(--m2);min-width:58px;}
+.delta-text{font-size:13px;color:var(--body);line-height:1.5;flex:1;min-width:0;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+
+/* Sidebar toggle (mobile) */
+.sidebar-toggle{
+  display:none;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:6px;
+  background:var(--s2);border:1px solid var(--b2);color:var(--bright);
+  cursor:pointer;font-size:18px;
+}
+.sidebar-toggle:hover,.sidebar-toggle:focus-visible{background:var(--s3);color:var(--white);}
+
+/* Responsive */
+@media(max-width:900px){
+  .module-grid{grid-template-columns:1fr 1fr;}
+  .sc-body,.inf-body{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+  .sidebar-toggle{display:inline-flex;}
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;z-index:60;
+    transform:translateX(-100%);transition:transform .25s;
+    box-shadow:6px 0 24px rgba(0,0,0,.5);
+    width:280px;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .hub{padding:16px;}
+  .module-grid{grid-template-columns:1fr;}
+  .demo-banner{padding:8px 14px;font-size:12px;}
+  .demo-banner span:nth-of-type(2){display:none;}
+  .topbar{padding:8px 14px;gap:8px;}
+  .tb-req{order:99;flex-basis:100%;}
+  .ov-back span{display:none;}
+}
+@media(max-width:480px){
+  .flow-step{padding:0 10px;}
+  .ov-inner{padding:0;}
+  pre.artifact{font-size:12px;padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#hub">Skip to main content</a>
+
+<!-- Demo banner -->
+<div class="demo-banner" role="note">
+  <div class="dot" aria-hidden="true"></div>
+  <span>Interactive Demo — <strong>EDUIA-1000 Login Screen</strong> · Mocked analysis · v1 and v2 evolution</span>
+  <span style="color:var(--soft)">All data is simulated to illustrate system capabilities</span>
+  <a href="docs.html" target="_blank" rel="noopener" aria-label="Read documentation in a new tab"><span aria-hidden="true">📖</span> Read Docs</a>
+</div>
+
+<!-- Topbar -->
+<header class="topbar" role="banner">
+  <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle history sidebar" aria-expanded="false" aria-controls="sidebar"><span aria-hidden="true">☰</span></button>
+  <div class="tb-logo">
+    <div class="tb-logo-dot" aria-hidden="true"></div>
+    AQuA Intelligence Platform
+    <span class="tb-version">v1.0 · demo</span>
+  </div>
+  <div class="tb-req" aria-live="polite">
+    requirement: <strong>EDUIA-1000</strong> [LOGIN] Login Screen &nbsp;·&nbsp; <span style="color:var(--ok)">v2 · analyzed</span>
+  </div>
+  <div class="tb-btns">
+    <button type="button" class="btn btn-ghost" onclick="openStory(this)" aria-label="Open story view"><span aria-hidden="true">↗</span> Story</button>
+    <button type="button" class="btn btn-primary"><span aria-hidden="true">⚡</span> Analyze Pipeline</button>
+  </div>
+</header>
+
+<!-- Layout -->
+<div class="layout">
+
+<!-- Sidebar (history) -->
+<nav class="sidebar" id="sidebar" aria-label="Analysis history">
+  <div class="sidebar-hd">History</div>
+  <div class="hist-list" role="list">
+    <button type="button" class="hist-item active" onclick="selectVersion(2,this)" role="listitem" aria-current="true" aria-label="EDUIA-1000 v2 · score 71 · high risk">
+      <div class="hi-id">EDUIA-1000 <span class="hi-ver">v2</span></div>
+      <div class="hi-title">LOGIN - Login Screen</div>
+      <div class="hi-meta">
+        <span class="hi-score" style="color:var(--warn)">71</span>
+        <span class="hi-risk high">high</span>
+        <span class="hi-date">Today 14:32</span>
+      </div>
+    </button>
+    <button type="button" class="hist-item" onclick="selectVersion(1,this)" role="listitem" aria-label="EDUIA-1000 v1 · score 54 · high risk">
+      <div class="hi-id">EDUIA-1000 <span class="hi-ver">v1</span></div>
+      <div class="hi-title">LOGIN - Login Screen</div>
+      <div class="hi-meta">
+        <span class="hi-score" style="color:var(--err)">54</span>
+        <span class="hi-risk high">high</span>
+        <span class="hi-date">Today 09:15</span>
+      </div>
+    </button>
+    <button type="button" class="hist-item" style="opacity:.55" role="listitem" aria-label="EDUIA-0998 Dashboard · score 82 · medium risk" disabled>
+      <div class="hi-id">EDUIA-0998</div>
+      <div class="hi-title">DASHBOARD - Main Dashboard</div>
+      <div class="hi-meta">
+        <span class="hi-score" style="color:var(--ok)">82</span>
+        <span class="hi-risk medium">medium</span>
+        <span class="hi-date">Yesterday</span>
+      </div>
+    </button>
+    <button type="button" class="hist-item" style="opacity:.55" role="listitem" aria-label="EDUIA-0995 Profile · score 78 · medium risk" disabled>
+      <div class="hi-id">EDUIA-0995</div>
+      <div class="hi-title">PROFILE - User Profile</div>
+      <div class="hi-meta">
+        <span class="hi-score" style="color:var(--ok)">78</span>
+        <span class="hi-risk medium">medium</span>
+        <span class="hi-date">2 days ago</span>
+      </div>
+    </button>
+  </div>
+</nav>
+
+<!-- Hub -->
+<main class="hub" id="hub" role="main" tabindex="-1">
+
+  <!-- Flow bar -->
+  <div class="flow-bar" role="img" aria-label="Pipeline flow">
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#7aaaff">N</div>
+      <div class="flow-label">Normalizer</div>
+      <div class="flow-score" style="color:var(--ok)">✓</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#ffc070">A</div>
+      <div class="flow-label">Ambiguity</div>
+      <div class="flow-score" style="color:var(--warn)">62</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#ff7575">R</div>
+      <div class="flow-label">Risk</div>
+      <div class="flow-score" style="color:var(--warn)">68</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#b594ff">RN</div>
+      <div class="flow-label">Rules</div>
+      <div class="flow-score" style="color:var(--ok)">80</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#5fd6e6">G</div>
+      <div class="flow-label">Gap</div>
+      <div class="flow-score" style="color:var(--warn)">65</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#7aaaff">C</div>
+      <div class="flow-label">Coverage</div>
+      <div class="flow-score" style="color:var(--ok)">75</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:#ffc070">I</div>
+      <div class="flow-label">Inference</div>
+      <div class="flow-score" style="color:var(--ok)">8</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-dot done" style="background:linear-gradient(135deg,#7aaaff,#b594ff)">S</div>
+      <div class="flow-label">Synthesis</div>
+      <div class="flow-score" style="color:var(--warn)">71</div>
+    </div>
+  </div>
+
+  <!-- Module cards -->
+  <div class="module-grid">
+
+    <!-- Card 1: QA Reasoning -->
+    <button type="button" class="mod-card" onclick="openModule('reasoning')" aria-label="Open module reasoning">
+      <div class="mc-header">
+        <div class="mc-num" style="background:var(--m1)">01</div>
+        <div class="mc-info">
+          <div class="mc-name">QA Reasoning Engine</div>
+          <div class="mc-tags">ambiguity · risk · rules</div>
+        </div>
+        <div class="mc-score" style="color:var(--warn)">65</div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><div class="mf-text">Brute force lockout threshold (RN-07) not specified — how many attempts?</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Session timeout duration undefined in RN-09</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">No MFA or 2FA mentioned for sensitive access</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m1)"></div><div class="mf-text">9 business rules identified · 6 acceptance criteria</div></div>
+      </div>
+      <button class="mc-open">+ Open full module</button>
+    </button>
+
+    <!-- Card 2: Knowledge Layer -->
+    <button type="button" class="mod-card" onclick="openModule('knowledge')" aria-label="Open module knowledge">
+      <div class="mc-header">
+        <div class="mc-num" style="background:var(--m2)">02</div>
+        <div class="mc-info">
+          <div class="mc-name">Knowledge Layer</div>
+          <div class="mc-tags">memory · patterns · history</div>
+        </div>
+        <div class="mc-score" style="color:var(--m2)">v2</div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--ok)"></div><div class="mf-text">📈 Improving · 2 versions analyzed</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><div class="mf-text">6 KB entries matched (brute force, session, LGPD)</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Pattern: Login flows without lockout caused 3 security incidents (conf: 87%)</div></div>
+      </div>
+      <button class="mc-open">+ Open full module</button>
+    </button>
+
+    <!-- Card 3: Traceability -->
+    <button type="button" class="mod-card" onclick="openModule('traceability')" aria-label="Open module traceability">
+      <div class="mc-header">
+        <div class="mc-num" style="background:var(--m3)">03</div>
+        <div class="mc-info">
+          <div class="mc-name">Traceability Engine</div>
+          <div class="mc-tags">RTM · scenarios · test cases</div>
+        </div>
+        <div class="mc-score" style="color:var(--warn)">68%</div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Ready for partial execution — 4 gaps require attention</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--ok)"></div><div class="mf-text">✓ 7 positive scenarios · ✗ 4 negative scenarios</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m1)"></div><div class="mf-text">⚡ 92% automatable · 11 test cases generated</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><div class="mf-text">Without coverage: RN-07 lockout threshold missing</div></div>
+      </div>
+      <button class="mc-open">+ Open full module</button>
+    </button>
+
+    <!-- Card 4: Coverage -->
+    <button type="button" class="mod-card" onclick="openModule('coverage')" aria-label="Open module coverage">
+      <div class="mc-header">
+        <div class="mc-num" style="background:var(--m4)">04</div>
+        <div class="mc-info">
+          <div class="mc-name">Coverage Validation</div>
+          <div class="mc-tags">gaps · inconsistencies · score</div>
+        </div>
+        <div class="mc-score" style="color:var(--warn)">75</div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><div class="mf-text">No brute force protection specification</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--err)"></div><div class="mf-text">Rate limiting not mentioned in RN-07</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Password recovery flow (RN-08) has no CA</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--warn)"></div><div class="mf-text">Logout scenario (RN-09) partially covered</div></div>
+      </div>
+      <button class="mc-open">+ Open full module</button>
+    </button>
+
+    <!-- Card 5: Artifact Generation -->
+    <button type="button" class="mod-card" onclick="openModule('artifacts')" aria-label="Open module artifacts">
+      <div class="mc-header">
+        <div class="mc-num" style="background:var(--m5)">05</div>
+        <div class="mc-info">
+          <div class="mc-name">Artifact Generation</div>
+          <div class="mc-tags">gherkin · test cases · RTM</div>
+        </div>
+        <div class="mc-score" style="color:var(--m5)">9</div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m3)"></div><div class="mf-text">QA · Gherkin · Test Cases · Evidence</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m1)"></div><div class="mf-text">Dev · Skeletons · Gap Analysis</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m2)"></div><div class="mf-text">PO · Acceptance Criteria · Business Value</div></div>
+        <div class="mc-finding"><div class="mf-dot" style="background:var(--m4)"></div><div class="mf-text">Audit · Risk Report · Exportable RTM</div></div>
+      </div>
+      <button class="mc-open">+ Open full module</button>
+    </button>
+
+  </div>
+
+  <!-- Synthesis -->
+  <div class="synth-card">
+    <div class="sc-header">
+      <div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Synthesis Engine</div>
+        <div class="sc-score-big" style="color:var(--warn)">71</div>
+      </div>
+      <div class="sc-meta">
+        <div class="sc-verdict">Partially ready — security gaps must be addressed before go-live</div>
+        <div class="sc-summary">The requirement covers core authentication flows well, but missing brute force threshold specification and undefined session timeout duration create critical security gaps. RN-07 and RN-09 require clarification before test execution can be considered complete.</div>
+      </div>
+    </div>
+    <div class="sc-body">
+      <div class="sc-col" style="border-right:1px solid var(--b1)">
+        <div class="sc-col-title" style="color:var(--err)">Critical Correlations</div>
+        <div class="sc-item">
+          <span class="sc-sev critical">critical</span>
+          <div class="sc-text">RN-07 + Gap Engine: lockout threshold undefined — Risk Engine flags brute force (RSK-001) with no mitigating spec</div>
+        </div>
+        <div class="sc-item">
+          <span class="sc-sev high">high</span>
+          <div class="sc-text">RN-08 (password recovery) has no corresponding CA — creates a testability gap and compliance risk</div>
+        </div>
+        <div class="sc-item">
+          <span class="sc-sev high">high</span>
+          <div class="sc-text">KB pattern: login flows without lockout caused 3 security incidents in similar stories (87% confidence)</div>
+        </div>
+      </div>
+      <div class="sc-col">
+        <div class="sc-col-title" style="color:var(--ok)">Top Actions</div>
+        <div class="sc-item">
+          <span class="sc-sev critical">1</span>
+          <div class="sc-text">Define exact lockout threshold in RN-07 (e.g. 5 attempts → 15 min block)</div>
+        </div>
+        <div class="sc-item">
+          <span class="sc-sev high">2</span>
+          <div class="sc-text">Add CA-07 for password recovery flow (RN-08)</div>
+        </div>
+        <div class="sc-item">
+          <span class="sc-sev high">3</span>
+          <div class="sc-text">Specify session timeout duration in RN-09 (e.g. 30 min inactivity)</div>
+        </div>
+        <div class="sc-item">
+          <span class="sc-sev medium">4</span>
+          <div class="sc-text">Consider adding MFA requirement for compliance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inference card -->
+  <div class="inf-card">
+    <div class="inf-header">
+      <div class="inf-count">8</div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--white)">Requirements Inference Engine</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted)">4 FRs + 4 NFRs inferred from RNs, CAs, risks and domain context</div>
+      </div>
+    </div>
+    <div class="inf-body">
+      <div class="inf-col" style="border-right:1px solid var(--b1)">
+        <div class="inf-col-title" style="color:var(--m1)">Functional Requirements (FR)</div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m1)">FR-001</div>
+          <div class="inf-text">System must maintain a per-user attempt counter, reset on successful login — origin: RN-07</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m1)">FR-002</div>
+          <div class="inf-text">System must provide admin unblock mechanism for locked accounts — origin: RN-07</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m1)">FR-003</div>
+          <div class="inf-text">Password recovery must send verification token via registered email — origin: RN-08</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m1)">FR-004</div>
+          <div class="inf-text">Session must be invalidated server-side on logout, not only client-side — origin: RN-09</div>
+        </div>
+      </div>
+      <div class="inf-col">
+        <div class="inf-col-title" style="color:var(--m5)">Non-Functional Requirements (NFR)</div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m5)">NFR-001</div>
+          <div class="inf-text"><span class="inf-badge" style="background:rgba(255,117,117,.1);color:var(--err)">security</span> Auth response must not differ between invalid user vs invalid password (timing attack)</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m5)">NFR-002</div>
+          <div class="inf-text"><span class="inf-badge" style="background:rgba(255,192,112,.1);color:var(--warn)">performance</span> Login response must complete in &lt;800ms for 95% of requests</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m5)">NFR-003</div>
+          <div class="inf-text"><span class="inf-badge" style="background:rgba(109,207,166,.1);color:var(--ok)">compliance</span> Failed login attempts must be logged with IP, timestamp, and user agent (LGPD)</div>
+        </div>
+        <div class="inf-item">
+          <div class="inf-id" style="color:var(--m5)">NFR-004</div>
+          <div class="inf-text"><span class="inf-badge" style="background:rgba(127,170,255,.1);color:var(--m1)">usability</span> Error messages must not reveal whether the username or password was incorrect</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main><!-- /hub -->
+</div><!-- /layout -->
+
+<!-- ══ MODULE OVERLAYS ══ -->
+
+<!-- Reasoning Engine -->
+<div class="overlay" id="ov-reasoning" role="dialog" aria-modal="true" aria-labelledby="ov-reasoning-title" aria-hidden="true">
+  <div class="ov-inner">
+    <div class="ov-topbar">
+      <button type="button" class="ov-back" onclick="closeOverlay('ov-reasoning')" aria-label="Back to hub"><span aria-hidden="true">←</span> <span>Back to Hub</span></button>
+      <h2 class="ov-title" id="ov-reasoning-title">QA Reasoning Engine</h2>
+      <span class="ov-badge" style="border-color:rgba(255,192,112,.3);color:var(--warn)">Score: 65 · risk: high</span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="ra-ambiguity" onclick="switchTab(this,'ra','ambiguity')">Ambiguity (4)</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="ra-risk" onclick="switchTab(this,'ra','risk')">Risk (5)</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="ra-rules" onclick="switchTab(this,'ra','rules')">Rules (9)</button>
+    </div>
+    <div class="tab-pane active" id="ra-ambiguity" role="tabpanel">
+      <div class="finding"><div class="finding-hd"><span class="finding-id">AMB-001</span><span class="finding-sev critical">critical</span></div><div class="finding-title">Lockout threshold not specified in RN-07</div><div class="finding-desc">RN-07 states the system must block after "X consecutive invalid attempts" but the value of X is not defined. This makes the rule untestable and unimplementable.</div><div class="finding-sug">→ Define the exact threshold (e.g. 5 attempts) and lockout duration (e.g. 15 minutes) in RN-07.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">AMB-002</span><span class="finding-sev high">high</span></div><div class="finding-title">Session timeout duration undefined in RN-09</div><div class="finding-desc">RN-09 mentions "inactivity timeout" but does not specify the duration. Without this, QA cannot test the session expiration behavior.</div><div class="finding-sug">→ Specify timeout value (e.g. 30 minutes of inactivity).</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">AMB-003</span><span class="finding-sev medium">medium</span></div><div class="finding-title">"Temporary" block duration not defined (RN-07)</div><div class="finding-desc">The block is described as "temporary" but no duration or unblock mechanism is specified. What happens after the block? Auto-unblock? Admin intervention?</div><div class="finding-sug">→ Define block duration and unblock mechanism.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">AMB-004</span><span class="finding-sev medium">medium</span></div><div class="finding-title">Password recovery flow scope unclear (RN-08)</div><div class="finding-desc">RN-08 says the system must "provide" the forgot-password feature but does not define the recovery method (email link, SMS code, security questions).</div><div class="finding-sug">→ Specify recovery mechanism in RN-08.</div></div>
+    </div>
+    <div class="tab-pane" id="ra-risk" role="tabpanel">
+      <div class="finding"><div class="finding-hd"><span class="finding-id">RSK-001</span><span class="finding-sev critical">critical</span></div><div class="finding-title">Brute force attack vector — undefined lockout</div><div class="finding-desc">Without a specified lockout threshold in RN-07, the login endpoint is vulnerable to brute force attacks. An attacker can try unlimited password combinations.</div><div class="finding-sug">→ Implement rate limiting + lockout with defined threshold before go-live.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">RSK-002</span><span class="finding-sev high">high</span></div><div class="finding-title">Timing attack on credential validation</div><div class="finding-desc">If the system returns different response times for "user not found" vs "wrong password", attackers can enumerate valid usernames.</div><div class="finding-sug">→ Ensure constant-time response for all invalid credential scenarios (NFR-001).</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">RSK-003</span><span class="finding-sev high">high</span></div><div class="finding-title">Session not invalidated server-side on logout</div><div class="finding-desc">If only the client-side token is cleared without server-side invalidation (RN-09), stolen tokens remain valid after logout.</div><div class="finding-sug">→ Implement server-side session revocation on logout.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">RSK-004</span><span class="finding-sev high">high</span></div><div class="finding-title">No LGPD audit logging specified</div><div class="finding-desc">Failed login attempts, lockout events, and password recovery requests must be logged for LGPD compliance. None of the RNs mention audit logging.</div><div class="finding-sug">→ Add audit logging requirement (NFR-003).</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id">RSK-005</span><span class="finding-sev medium">medium</span></div><div class="finding-title">No MFA requirement for sensitive roles</div><div class="finding-desc">The requirement does not address Multi-Factor Authentication. For an educational platform with student data, MFA may be required for admin roles.</div><div class="finding-sug">→ Evaluate MFA requirement for privileged profiles.</div></div>
+    </div>
+    <div class="tab-pane" id="ra-rules" role="tabpanel">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-01</span></div><div class="finding-title">Required fields</div><div class="finding-desc">System must require email/username and password fields.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-02</span></div><div class="finding-title">Credential validation</div><div class="finding-desc">Validate credentials against the user database.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-03</span></div><div class="finding-title">Invalid auth message</div><div class="finding-desc">Display error when credentials are invalid.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-04</span></div><div class="finding-title">Password masking</div><div class="finding-desc">Mask characters in the password field.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-05</span></div><div class="finding-title">Session control</div><div class="finding-desc">Create valid session after successful authentication.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-06</span></div><div class="finding-title">Post-login redirect</div><div class="finding-desc">Redirect to home page after successful login.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-07</span></div><div class="finding-title">Lockout <span style="color:var(--err);font-size:10px">⚠ threshold missing</span></div><div class="finding-desc">Block after X invalid attempts (X undefined).</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-08</span></div><div class="finding-title">Password recovery</div><div class="finding-desc">Provide "Forgot my password" feature.</div></div>
+        <div class="finding"><div class="finding-hd"><span class="finding-id">RN-09</span></div><div class="finding-title">Logout &amp; expiration <span style="color:var(--warn);font-size:10px">⚠ duration missing</span></div><div class="finding-desc">End session on logout or inactivity (duration undefined).</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Knowledge Layer -->
+<div class="overlay" id="ov-knowledge" role="dialog" aria-modal="true" aria-labelledby="ov-knowledge-title" aria-hidden="true">
+  <div class="ov-inner">
+    <div class="ov-topbar">
+      <button type="button" class="ov-back" onclick="closeOverlay('ov-knowledge')" aria-label="Back to hub"><span aria-hidden="true">←</span> <span>Back to Hub</span></button>
+      <h2 class="ov-title" id="ov-knowledge-title">Knowledge Layer</h2>
+      <span class="ov-badge" style="border-color:rgba(181,148,255,.3);color:var(--m2)">v2 · 📈 Improving</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="finding">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Version History</div>
+        <div style="display:flex;gap:16px;">
+          <div><div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--warn)">54</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">v1 · high risk</div></div>
+          <div style="color:var(--ok);font-size:18px;margin-top:4px;">→</div>
+          <div><div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--warn)">71</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">v2 · high risk</div></div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--ok)">↑ +17 points · 5 RNs added · 6 CAs added</div>
+      </div>
+      <div class="finding">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Corporate KB — Matched</div>
+        <div style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m2);margin-bottom:4px;">6</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--muted)">entries · 2 auto-extracted · 4 manual</div>
+        <div style="margin-top:6px;font-size:10px;font-family:var(--mono);color:var(--warn)">⚠ 1 high-confidence pattern flagged</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--white);margin-bottom:10px;">KB Entries Used in This Analysis</div>
+    <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--err)">RISK</span><span style="font-size:9px;font-family:var(--mono);color:var(--ok);margin-left:8px;">conf: 87% · seen 6x</span></span><span class="inf-badge" style="background:rgba(109,207,166,.1);color:var(--ok);margin-left:auto;">auto</span></div><div class="finding-title">Login flows without lockout generated security incidents</div><div class="finding-desc">Pattern detected across 6 previous login-related stories in the platform. Missing lockout threshold consistently led to brute force vulnerabilities in production.</div></div>
+    <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m2)">COMPLIANCE</span><span style="font-size:9px;font-family:var(--mono);color:var(--ok);margin-left:8px;">conf: 95% · seen 12x</span></div><div class="finding-title">LGPD requires audit logging for authentication events</div><div class="finding-desc">Brazilian LGPD mandates that access events (successful logins, failures, lockouts) are logged with user identity, IP address, and timestamp for 12 months.</div></div>
+    <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--warn)">PATTERN</span><span style="font-size:9px;font-family:var(--mono);color:var(--ok);margin-left:8px;">conf: 72% · seen 4x</span><span class="inf-badge" style="background:rgba(109,207,166,.1);color:var(--ok);margin-left:auto;">auto</span></div><div class="finding-title">Timing attacks on credential validation — recurring gap</div><div class="finding-desc">In 4 previous authentication stories, the gap of differential response time between "user not found" and "wrong password" was not addressed in requirements.</div></div>
+    <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m1)">PATTERN</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">conf: 55% · seen 3x</span></div><div class="finding-title">Password recovery without CA leads to incomplete test coverage</div><div class="finding-desc">Stories that include password recovery functionality (RN-08 equivalent) without a corresponding CA consistently show gaps in test coverage for the recovery flow.</div></div>
+  </div>
+</div>
+
+<!-- Traceability Engine -->
+<div class="overlay" id="ov-traceability" role="dialog" aria-modal="true" aria-labelledby="ov-traceability-title" aria-hidden="true">
+  <div class="ov-inner">
+    <div class="ov-topbar">
+      <button type="button" class="ov-back" onclick="closeOverlay('ov-traceability')" aria-label="Back to hub"><span aria-hidden="true">←</span> <span>Back to Hub</span></button>
+      <h2 class="ov-title" id="ov-traceability-title">Traceability Engine v2 — RTM</h2>
+      <span class="ov-badge" style="border-color:rgba(95,214,230,.3);color:var(--m3)">68% coverage · 11 CTs</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;">
+      <div class="finding" style="text-align:center;padding:12px 8px;">
+        <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--warn)">68%</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Overall</div>
+      </div>
+      <div class="finding" style="text-align:center;padding:12px 8px;">
+        <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--ok)">80%</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Functional</div>
+      </div>
+      <div class="finding" style="text-align:center;padding:12px 8px;">
+        <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--err)">45%</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Security</div>
+      </div>
+      <div class="finding" style="text-align:center;padding:12px 8px;">
+        <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--warn)">60%</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Compliance</div>
+      </div>
+      <div class="finding" style="text-align:center;padding:12px 8px;">
+        <div style="font-size:20px;font-family:var(--mono);font-weight:700;color:var(--ok)">75%</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Usability</div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="tr-rtm" onclick="switchTab(this,'tr','rtm')">RTM (11)</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tr-scenarios" onclick="switchTab(this,'tr','scenarios')">Scenarios (11)</button>
+    </div>
+
+    <div class="tab-pane active" id="tr-rtm" role="tabpanel">
+      <div class="rtm-wrap">
+        <div class="rtm-hd">Requirements Traceability Matrix — EDUIA-1000 v2</div>
+        <div style="overflow-x:auto;">
+        <table class="rtm">
+          <thead><tr><th>Test ID</th><th>RN</th><th>CA</th><th>Test Case Title</th><th>Risk</th><th>Gap</th><th>Priority</th><th>Auto.</th></tr></thead>
+          <tbody>
+            <tr><td class="ct">CT-001</td><td class="rn">RN-01</td><td class="ca">CA-03</td><td>Required fields validation on empty submit</td><td>—</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-002</td><td class="rn">RN-02</td><td class="ca">CA-01</td><td>Successful login with valid credentials</td><td>—</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-003</td><td class="rn">RN-02</td><td class="ca">CA-02</td><td>Negative: invalid username returns error</td><td>RSK-001</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-004</td><td class="rn">RN-02</td><td class="ca">CA-02</td><td>Negative: invalid password returns error</td><td>RSK-001</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-005</td><td class="rn">RN-03</td><td class="ca">CA-02</td><td>Error message does not reveal user existence</td><td>RSK-002</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-006</td><td class="rn">RN-04</td><td class="ca">CA-04</td><td>Password field masks typed characters</td><td>—</td><td>—</td><td><span class="pill medium">medium</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-007</td><td class="rn">RN-05</td><td class="ca">CA-01</td><td>Session created after successful authentication</td><td>RSK-003</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-008</td><td class="rn">RN-06</td><td class="ca">CA-01</td><td>Redirect to home page after login</td><td>—</td><td>—</td><td><span class="pill medium">medium</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-009</td><td class="rn">RN-07</td><td class="ca">CA-05</td><td>Negative: account locked after invalid attempts</td><td>RSK-001</td><td>GAP-001</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-010</td><td class="rn">RN-08</td><td class="ca">—</td><td>Password recovery flow initiated</td><td>—</td><td>GAP-002</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-011</td><td class="rn">RN-09</td><td class="ca">CA-01</td><td>Session terminated on logout</td><td>RSK-003</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--err);">⚠ Uncovered: RN-07 lockout threshold (GAP-001) · RN-08 has no CA (GAP-002)</div>
+    </div>
+
+    <div class="tab-pane" id="tr-scenarios" role="tabpanel">
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m3)">SC-001</span><span class="finding-sev" style="background:rgba(109,207,166,.1);color:var(--ok)">positive</span><span class="finding-sev high" style="margin-left:4px;">high</span><span style="margin-left:auto;font-size:9px;font-family:var(--mono);color:var(--ok)">⚡ RF + Browser</span></div><div class="finding-title">Successful login flow end-to-end</div><div class="finding-desc"><strong>Pre-conditions:</strong> Valid user account exists · <strong>Steps:</strong> 1. Navigate to login · 2. Enter valid email + password · 3. Click Login · <strong>Expected:</strong> Session created, redirect to home page per CA-01</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m3)">SC-002</span><span class="finding-sev critical">negative</span><span class="finding-sev critical" style="margin-left:4px;">critical</span><span style="margin-left:8px;font-size:9px;font-family:var(--mono);color:var(--m2)">→ RSK-001</span></div><div class="finding-title">Negative: Brute force lockout after repeated failures</div><div class="finding-desc"><strong>Pre-conditions:</strong> Valid account exists · <strong>Steps:</strong> 1. Attempt login N times with wrong password · 2. Verify lockout message appears · 3. Attempt again during lockout · <strong>Expected:</strong> Access blocked per CA-05 (N=threshold from RN-07 — currently undefined ⚠)</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m3)">SC-003</span><span class="finding-sev critical">negative</span><span class="finding-sev critical" style="margin-left:4px;">critical</span><span style="margin-left:8px;font-size:9px;font-family:var(--mono);color:var(--m2)">→ RSK-002</span></div><div class="finding-title">Negative: Error message reveals no user/password distinction</div><div class="finding-desc"><strong>Steps:</strong> 1. Enter non-existent username + any password · 2. Enter valid username + wrong password · 3. Compare error messages and response times · <strong>Expected:</strong> Identical message and response time for both scenarios</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Artifact Generation -->
+<div class="overlay" id="ov-artifacts" role="dialog" aria-modal="true" aria-labelledby="ov-artifacts-title" aria-hidden="true">
+  <div class="ov-inner">
+    <div class="ov-topbar">
+      <button type="button" class="ov-back" onclick="closeOverlay('ov-artifacts')" aria-label="Back to hub"><span aria-hidden="true">←</span> <span>Back to Hub</span></button>
+      <h2 class="ov-title" id="ov-artifacts-title">Artifact Generation v2</h2>
+      <span class="ov-badge" style="border-color:rgba(255,192,112,.3);color:var(--m5)">9 artifacts · 4 profiles</span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="art-gherkin" onclick="switchTab(this,'art','gherkin')">🧪 Gherkin</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="art-testcases" onclick="switchTab(this,'art','testcases')">Test Cases</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="art-skeleton" onclick="switchTab(this,'art','skeleton')">⚙ Skeletons</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="art-po" onclick="switchTab(this,'art','po')">📋 PO</button>
+    </div>
+    <div class="tab-pane active" id="art-gherkin" role="tabpanel">
+      <div class="art-hd"><div class="art-title">Gherkin / BDD Feature File</div><div class="art-format">.feature</div><button class="art-copy" onclick="copyCode('gherkin-code')">⎘ Copy</button></div>
+      <pre class="artifact" id="gherkin-code">@login @authentication @EDUIA-1000
+Feature: EDUIA-1000 — Secure Login Screen
+  As a platform user
+  I want to authenticate through a secure login screen
+  So that I can access platform features according to my profile
+
+  Background:
+    Given the EDUIA platform login page is available
+    And the authentication service is running
+
+  @smoke @regression @CA-01 @RN-01 @RN-02 @RN-05 @RN-06
+  Scenario: CT-002 — Successful login with valid credentials
+    Given a registered user with email "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="94e7e0e1f0f1fae0d4f1f0e1fdf5baf7fbf9">[email&#160;protected]</a>" and valid password
+    When the user enters valid credentials and clicks Login
+    Then the system authenticates the user successfully
+    And a valid session is created (RN-05)
+    And the user is redirected to the home page (RN-06, CA-01)
+
+  @regression @CA-03 @RN-01
+  Scenario: CT-001 — Required field validation on empty submit
+    Given the user is on the login page
+    When the user clicks Login without entering any credentials
+    Then the system displays required field validation for email
+    And the system displays required field validation for password (CA-03)
+    And no authentication request is sent to the backend
+
+  @security @critical @CA-02 @RN-02 @RN-03 @RSK-001
+  Scenario Outline: CT-003/CT-004 — Invalid credentials return generic error
+    Given a login attempt with invalid credentials
+    When the user enters "&lt;email&gt;" and "&lt;password&gt;" and clicks Login
+    Then the system displays: "Invalid username or password" (CA-02)
+    And the error message does not reveal whether the email or password is incorrect
+    And the response time is consistent regardless of failure reason (RSK-002)
+    Examples:
+      | email                    | password      |
+      | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7f1110111a07160c0b1a110b3f1a1b0a161e511c1012">[email&#160;protected]</a>    | anypassword   |
+      | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e89b9c9d8c8d869ca88d8c9d8189c68b8785">[email&#160;protected]</a>        | wrongpassword |
+
+  @security @critical @CA-05 @RN-07 @RSK-001
+  Scenario: CT-009 — Account lockout after consecutive invalid attempts
+    Given the user "<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4a393e3f2e2f243e0a2f2e3f232b64292527">[email&#160;protected]</a>" exists in the system
+    When the user attempts login with wrong password 5 consecutive times
+    Then the account is temporarily blocked
+    And the system displays an informative lockout message (CA-05)
+    And subsequent login attempts are blocked during the lockout period
+    # NOTE: lockout threshold (5) is assumed — RN-07 does not specify exact value ⚠
+
+  @security @critical @RSK-002
+  Scenario: CT-005 — Password field masks characters
+    Given the user is on the login page
+    When the user types characters in the password field
+    Then each character is displayed as a masked symbol (CA-04, RN-04)
+    And the actual password value is not visible in the DOM</pre>
+    </div>
+    <div class="tab-pane" id="art-testcases" role="tabpanel">
+      <div class="art-hd"><div class="art-title">Detailed Test Cases</div><div class="art-format">.md</div><button class="art-copy" onclick="copyCode('tc-code')">⎘ Copy</button></div>
+      <pre class="artifact" id="tc-code">## CT-002 - RN-02 | CA-01: Successful login with valid credentials
+
+**Type:** Functional  
+**Priority:** High  
+**Traceability:** RN-02 → CA-01 → SC-001  
+**RN-02:** The system must validate credentials against the user database.  
+**CA-01:** Given valid credentials, the system authenticates and redirects to home.
+
+**Pre-conditions:**
+- Registered user account with email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4132353425242f350124253428206f222e2c">[email&#160;protected]</a>
+- Account is active and not locked
+
+**Test Data:**
+- Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="196a6d6c7d7c776d597c7d6c7078377a7674">[email&#160;protected]</a>
+- Password: Edui@2024! (valid)
+
+**Steps:**
+1. Navigate to the EDUIA login page
+2. Enter email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4437303120212a30042120312d256a272b29">[email&#160;protected]</a>
+3. Enter password (verify characters are masked - CA-04)
+4. Click the Login button
+
+**Expected result:**
+- Authentication succeeds
+- Session token is created and stored (RN-05)
+- Browser redirects to /home or /dashboard (RN-06)
+- No error message is displayed
+
+**Automated:** Yes — Robot Framework + Browser Library  
+**Tags:** smoke, regression, functional
+
+---
+
+## CT-009 - RN-07 | CA-05: Account lockout after failed attempts
+
+**Type:** Security — Negative  
+**Priority:** Critical  
+**Traceability:** RN-07 → CA-05 → SC-002 · Risk: RSK-001  
+**RN-07:** Block access temporarily after X consecutive invalid attempts.  
+**CA-05:** Given exceeded invalid attempts, block and display informative message.  
+⚠ **Note:** RN-07 does not define the exact threshold value (X). Test uses assumed value of 5.
+
+**Pre-conditions:**
+- Valid user account: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8cfff8f9e8e9e2f8cce9e8f9e5eda2efe3e1">[email&#160;protected]</a>
+- Account is unlocked
+
+**Test Data:**
+- Valid email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6516111001000b11250001100c044b060a08">[email&#160;protected]</a>
+- Invalid password: WrongPass123! (repeated)
+
+**Steps:**
+1. Navigate to login page
+2. Enter valid email + wrong password → click Login (attempt 1)
+3. Repeat step 2 four more times (attempts 2–5)
+4. Verify lockout message appears after attempt 5
+5. Try to login with correct credentials during lockout
+6. Verify access is still blocked
+
+**Expected result:**
+- After 5 failed attempts: account is blocked
+- Lockout message is displayed (CA-05)
+- Correct credentials are rejected during lockout period
+- Lockout event is logged in audit trail (NFR-003)
+
+**Automated:** Yes — Robot Framework + API  
+**Tags:** security, critical, regression</pre>
+    </div>
+    <div class="tab-pane" id="art-skeleton" role="tabpanel">
+      <div class="art-hd"><div class="art-title">Robot Framework Skeleton</div><div class="art-format">.robot</div><button class="art-copy" onclick="copyCode('rf-code')">⎘ Copy</button></div>
+      <pre class="artifact" id="rf-code">*** Settings ***
+Documentation     EDUIA-1000 — Login Screen Test Suite
+...               Generated from pipeline analysis · EDUIA-1000 v2
+...               RNs: 9 | CAs: 6 | CTs: 11 | Coverage: 68%
+Library           Browser
+Library           RequestsLibrary
+Resource          ../resources/auth_keywords.resource
+Suite Setup       Open Browser To Login Page
+Suite Teardown    Close All Browsers
+
+*** Variables ***
+${BASE_URL}         %{EDUIA_BASE_URL}
+${VALID_EMAIL}      %{TEST_USER_EMAIL}
+${VALID_PASS}       %{TEST_USER_PASS}
+${INVALID_PASS}     %{TEST_INVALID_PASS}
+# TODO: Get lockout threshold from env — RN-07 threshold not specified ⚠
+${LOCKOUT_THRESHOLD}    %{LOCKOUT_ATTEMPTS:5}
+
+*** Test Cases ***
+
+CT-002 - RN-02 | CA-01: Successful Login With Valid Credentials
+    [Documentation]    Validates complete login flow with valid credentials.
+    ...                RN-02: credential validation · CA-01: redirect to home
+    [Tags]    smoke    regression    functional    EDUIA-1000
+    Login With Credentials    ${VALID_EMAIL}    ${VALID_PASS}
+    Verify User Is On Home Page
+    Verify Session Is Created
+
+CT-001 - RN-01 | CA-03: Required Fields Validation
+    [Documentation]    Validates required field enforcement on empty submit.
+    ...                RN-01: required fields · CA-03: validation messages
+    [Tags]    regression    functional    EDUIA-1000
+    Submit Login Form Without Credentials
+    Verify Required Field Error Is Shown    email
+    Verify Required Field Error Is Shown    password
+    Verify No Auth Request Was Sent
+
+CT-009 - RN-07 | CA-05: Account Lockout After Failed Attempts
+    [Documentation]    Validates lockout behavior after consecutive failures.
+    ...                RN-07: lockout (threshold: ${LOCKOUT_THRESHOLD}) · CA-05: lockout message
+    ...                RSK-001: brute force mitigation
+    [Tags]    security    critical    regression    EDUIA-1000
+    Attempt Failed Login    ${VALID_EMAIL}    ${INVALID_PASS}    ${LOCKOUT_THRESHOLD}
+    Verify Account Is Locked    ${VALID_EMAIL}
+    Verify Lockout Message Is Displayed
+    Verify Correct Credentials Are Rejected During Lockout    ${VALID_EMAIL}    ${VALID_PASS}
+    # TODO: Verify audit log entry created (NFR-003 — LGPD compliance)
+
+CT-005 - RN-03 | CA-02: Generic Error Message (No User Enumeration)
+    [Documentation]    Validates that error messages do not reveal user existence.
+    ...                RN-03: error message · RSK-002: timing attack prevention
+    [Tags]    security    critical    EDUIA-1000
+    ${resp_1}=    Attempt Login And Measure Time    <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a4cacbcac1dccdd7d0c1cad0e4c1c0d1cdc58ac7cbc9">[email&#160;protected]</a>    anypass
+    ${resp_2}=    Attempt Login And Measure Time    ${VALID_EMAIL}    wrongpass
+    Verify Messages Are Identical    ${resp_1}    ${resp_2}
+    Verify Response Times Are Similar    ${resp_1}    ${resp_2}    threshold=200ms
+
+*** Keywords ***
+Login With Credentials
+    [Arguments]    ${email}    ${password}
+    Fill Text      id=email-field    ${email}
+    Fill Secret    id=password-field    ${password}
+    Click          id=login-btn
+    Wait For Navigation
+
+Verify User Is On Home Page
+    Get Url    contains=/home
+
+Verify Session Is Created
+    ${cookie}=    Get Cookie    session_token
+    Should Not Be Empty    ${cookie.value}</pre>
+    </div>
+    <div class="tab-pane" id="art-po" role="tabpanel">
+      <div class="art-hd"><div class="art-title">Business Value Report (PO)</div><div class="art-format">.md</div><button class="art-copy" onclick="copyCode('po-code')">⎘ Copy</button></div>
+      <pre class="artifact" id="po-code">## Business Value — EDUIA-1000 Login Screen
+
+### What this delivers to users
+Students and educators gain secure, reliable access to the EDUIA platform.
+The login screen is the gateway to all platform functionality — getting it right
+is foundational to all other features.
+
+### What changes in the operation
+- Users authenticate with email + password (replacing any current workaround)
+- Session management prevents users from needing to re-login constantly
+- Password recovery reduces support tickets for forgotten credentials
+
+### Risks to the business (translated from technical findings)
+
+⚠ **CRITICAL — Brute force vulnerability (RSK-001)**
+Without a defined lockout threshold (RN-07 is incomplete), student accounts
+can be compromised through automated password guessing. This could expose
+student personal data and create LGPD liability.
+→ Action needed: Define lockout threshold before go-live.
+
+⚠ **HIGH — LGPD compliance gap (RSK-004)**
+Authentication events are not being logged. Brazilian LGPD requires audit
+trails for data access events. Non-compliance risks regulatory fines.
+→ Action needed: Add audit logging requirement.
+
+### What users will NOT be able to do (gaps identified)
+✗ No password complexity requirements specified — weak passwords allowed
+✗ Password recovery flow exists (RN-08) but has no testable acceptance criterion
+✗ No "remember me" functionality specified
+✗ No session timeout visible to the user (silent expiration)
+
+### Recommended priority before go-live
+| Item | Business Impact | Effort | Priority |
+|------|----------------|--------|----------|
+| Define lockout threshold (RN-07) | Critical — security | Low (spec only) | P0 |
+| Add CA for password recovery (CA-07) | High — testability | Low (spec only) | P0 |
+| Add LGPD audit logging | Critical — compliance | Medium | P1 |
+| Define session timeout value (RN-09) | High — UX + security | Low | P1 |
+
+### How to measure success
+- Login success rate &gt; 98% in first 30 days
+- Support tickets for "can't login" &lt; 5% of user base
+- Zero security incidents related to credential attacks
+- Zero LGPD violations related to authentication events</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STORY VIEW ══ -->
+<div class="overlay" id="ov-story" role="dialog" aria-modal="true" aria-labelledby="ov-story-title" aria-hidden="true">
+  <div class="ov-inner">
+    <div class="ov-topbar">
+      <button type="button" class="ov-back" onclick="closeOverlay('ov-story')" aria-label="Back to hub"><span aria-hidden="true">←</span> <span>Back to Hub</span></button>
+      <h2 class="ov-title" id="ov-story-title">EDUIA-1000 — Login Screen</h2>
+      <span class="ov-badge" style="border-color:rgba(255,192,112,.3);color:var(--warn)">v2 · current · score 71</span>
+    </div>
+
+    <!-- Story summary -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+      <div class="finding" style="text-align:center;padding:12px 8px;"><div style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m1)">2</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Versions</div></div>
+      <div class="finding" style="text-align:center;padding:12px 8px;"><div style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--err)">0</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Open Defects</div></div>
+      <div class="finding" style="text-align:center;padding:12px 8px;"><div style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m3)">11</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">Test Cases</div></div>
+      <div class="finding" style="text-align:center;padding:12px 8px;"><div style="font-size:22px;font-family:var(--mono);font-weight:700;color:var(--m2)">8</div><div style="font-size:9px;font-family:var(--mono);color:var(--muted)">RF/RNF Inferred</div></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" aria-controls="st-versions" onclick="switchTab(this,'st','versions')">📋 Versions</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="st-rtm" onclick="switchTab(this,'st','rtm')">🔗 RTM</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="st-rfrnf" onclick="switchTab(this,'st','rfrnf')">🔍 RF/RNF</button>
+    </div>
+
+    <!-- Versions tab -->
+    <div class="tab-pane active" id="st-versions" role="tabpanel">
+
+      <!-- v2 -->
+      <div class="ver-item active-ver">
+        <div class="ver-hd">
+          <div class="ver-badge">v2</div>
+          <div class="ver-meta">
+            <div class="ver-date">Today 14:32 · <strong style="color:var(--white)">Current</strong></div>
+          </div>
+          <span class="delta up">↑ +17 vs v1</span>
+        </div>
+        <div class="ver-scores">
+          <div><div class="ver-score-val" style="color:var(--warn)">71</div><div class="ver-score-lbl">Score</div></div>
+          <div><div class="ver-score-val" style="color:var(--warn)">high</div><div class="ver-score-lbl">Risk</div></div>
+          <div><div class="ver-score-val" style="color:var(--body)">38.2s</div><div class="ver-score-lbl">Time</div></div>
+        </div>
+      </div>
+
+      <!-- Delta panel -->
+      <div class="delta-panel">
+        <div class="delta-title">
+          ⊕ What changed from v1 → v2
+          <span class="delta up">↑ score +17</span>
+          <span style="font-size:9px;font-family:var(--mono);color:var(--warn);padding:2px 8px;border-radius:3px;background:rgba(255,192,112,.08);border:1px solid rgba(255,192,112,.2);">impact: high</span>
+        </div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">RN-05</div><div class="delta-text">Session control — create valid session after successful authentication</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">RN-07</div><div class="delta-text">Lockout — block temporarily after X consecutive invalid attempts (threshold still undefined ⚠)</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">RN-08</div><div class="delta-text">Password recovery — provide "Forgot my password" feature</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">RN-09</div><div class="delta-text">Logout and session expiration (duration still undefined ⚠)</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">CA-01</div><div class="delta-text">Successful login acceptance criterion with explicit redirect behavior</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">CA-05</div><div class="delta-text">Lockout criterion — block and display informative message</div></div>
+        <div class="delta-row"><div class="delta-action added">+ Added</div><div class="delta-id">CA-06</div><div class="delta-text">Password recovery criterion — direct to recovery flow</div></div>
+        <div class="delta-row"><div class="delta-action modified">~ Modified</div><div class="delta-id">RN-03</div><div class="delta-text">Error message — clarified to be generic (does not reveal user vs password failure)</div></div>
+        <div style="margin-top:10px;padding:8px 10px;background:rgba(255,117,117,.06);border:1px solid rgba(255,117,117,.15);border-radius:5px;font-size:10px;font-family:var(--mono);color:var(--err);">
+          ⚠ Re-analysis recommended — 4 new RNs added · security scope significantly expanded
+        </div>
+      </div>
+
+      <!-- v1 -->
+      <div class="ver-item" style="margin-top:12px;">
+        <div class="ver-hd">
+          <div class="ver-badge" style="background:var(--s3);border:1px solid var(--b1);color:var(--muted)">v1</div>
+          <div class="ver-meta">
+            <div class="ver-date">Today 09:15</div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:2px;">5 RNs · 0 CAs · basic flow only</div>
+          </div>
+        </div>
+        <div class="ver-scores">
+          <div><div class="ver-score-val" style="color:var(--err)">54</div><div class="ver-score-lbl">Score</div></div>
+          <div><div class="ver-score-val" style="color:var(--warn)">high</div><div class="ver-score-lbl">Risk</div></div>
+          <div><div class="ver-score-val" style="color:var(--body)">24.1s</div><div class="ver-score-lbl">Time</div></div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--soft);border-top:1px solid var(--b1);padding-top:10px;">
+          <strong style="color:var(--err)">v1 verdict:</strong> Not ready — missing session control, lockout, and recovery. Only basic credential validation covered. No acceptance criteria defined.
+        </div>
+      </div>
+    </div>
+
+    <!-- RTM tab -->
+    <div class="tab-pane" id="st-rtm" role="tabpanel">
+      <div class="rtm-wrap">
+        <div class="rtm-hd">RTM — EDUIA-1000 v2 · 11 test cases · 68% coverage</div>
+        <div style="overflow-x:auto;">
+        <table class="rtm">
+          <thead><tr><th>Test ID</th><th>RN</th><th>CA</th><th>Test Case Title</th><th>Risk</th><th>Gap</th><th>Priority</th><th>Auto.</th></tr></thead>
+          <tbody>
+            <tr><td class="ct">CT-001</td><td class="rn">RN-01</td><td class="ca">CA-03</td><td>Required fields on empty submit</td><td>—</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-002</td><td class="rn">RN-02</td><td class="ca">CA-01</td><td>Successful login with valid credentials</td><td>—</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-003</td><td class="rn">RN-02</td><td class="ca">CA-02</td><td>Negative: invalid username</td><td class="risk">RSK-001</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-004</td><td class="rn">RN-02</td><td class="ca">CA-02</td><td>Negative: invalid password</td><td class="risk">RSK-001</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-005</td><td class="rn">RN-03</td><td class="ca">CA-02</td><td>Error does not reveal user existence</td><td class="risk">RSK-002</td><td>—</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-006</td><td class="rn">RN-04</td><td class="ca">CA-04</td><td>Password field masking</td><td>—</td><td>—</td><td><span class="pill medium">medium</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-007</td><td class="rn">RN-05</td><td class="ca">CA-01</td><td>Session created after auth</td><td class="risk">RSK-003</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-008</td><td class="rn">RN-06</td><td class="ca">CA-01</td><td>Redirect to home after login</td><td>—</td><td>—</td><td><span class="pill medium">medium</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-009</td><td class="rn">RN-07</td><td class="ca">CA-05</td><td>Account lockout after failures</td><td class="risk">RSK-001</td><td class="risk">GAP-001</td><td><span class="pill critical">critical</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-010</td><td class="rn">RN-08</td><td class="ca">—</td><td>Password recovery flow</td><td>—</td><td class="risk">GAP-002</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+            <tr><td class="ct">CT-011</td><td class="rn">RN-09</td><td class="ca">CA-01</td><td>Session terminated on logout</td><td class="risk">RSK-003</td><td>—</td><td><span class="pill high">high</span></td><td class="ok">✓</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RF/RNF tab -->
+    <div class="tab-pane" id="st-rfrnf" role="tabpanel">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:14px;">Inferred by the Requirements Inference Engine from RNs, CAs, risks, and domain context.</div>
+      <div style="font-size:12px;font-weight:600;color:var(--m1);margin-bottom:8px;">Functional Requirements (4)</div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m1)">FR-001</span><span class="finding-sev critical">critical</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RN-07</span></div><div class="finding-title">Per-user attempt counter maintained server-side</div><div class="finding-desc">The system must maintain an attempt counter per user (not per session), reset only on successful login or admin intervention.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m1)">FR-002</span><span class="finding-sev high">high</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RN-07</span></div><div class="finding-title">Admin account unblock mechanism</div><div class="finding-desc">An administrative interface or API must exist to unblock locked accounts before the automatic lockout period expires.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m1)">FR-003</span><span class="finding-sev high">high</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RN-08</span></div><div class="finding-title">Verification token sent via registered email</div><div class="finding-desc">Password recovery must send a time-limited verification token to the email address registered to the account.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m1)">FR-004</span><span class="finding-sev high">high</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RN-09</span></div><div class="finding-title">Server-side session invalidation on logout</div><div class="finding-desc">Session must be invalidated on the server side on logout — not only by clearing the client-side token.</div></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--m5);margin-top:16px;margin-bottom:8px;">Non-Functional Requirements (4)</div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m5)">NFR-001</span><span class="finding-sev critical">security</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RSK-002</span></div><div class="finding-title">Constant-time response for all invalid auth scenarios</div><div class="finding-desc">Auth response time must be identical for "user not found" and "wrong password" to prevent timing attacks and username enumeration.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m5)">NFR-002</span><span class="finding-sev high">performance</span></div><div class="finding-title">Login response time &lt; 800ms for 95% of requests</div><div class="finding-desc">Authentication must complete in under 800ms under normal load conditions to meet user experience expectations.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m5)">NFR-003</span><span class="finding-sev critical">compliance</span><span style="font-size:9px;font-family:var(--mono);color:var(--muted);margin-left:8px;">↳ RSK-004 · LGPD</span></div><div class="finding-title">LGPD audit logging for all authentication events</div><div class="finding-desc">All login attempts (success and failure), lockout events, and recovery requests must be logged with user identity, IP address, timestamp, and user agent for 12 months.</div></div>
+      <div class="finding"><div class="finding-hd"><span class="finding-id" style="color:var(--m5)">NFR-004</span><span class="finding-sev medium">usability</span></div><div class="finding-title">Error messages must not disclose failure reason</div><div class="finding-desc">All authentication failure scenarios must display an identical generic message to prevent user enumeration attacks.</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// A11y: rastreia o elemento que abriu cada overlay para devolver o foco
+const __a11yReturn = {};
+function __openOv(id, opener){
+  const el = document.getElementById(id);
+  if(!el) return;
+  __a11yReturn[id] = opener || document.activeElement;
+  el.classList.add('open');
+  el.setAttribute('aria-hidden','false');
+  setTimeout(()=>{
+    const f = el.querySelector('.ov-back') || el.querySelector('button,[href],[tabindex]:not([tabindex="-1"])');
+    if(f) f.focus();
+  }, 50);
+}
+function __closeOv(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden','true');
+  const ret = __a11yReturn[id];
+  if(ret && typeof ret.focus === 'function') ret.focus();
+  __a11yReturn[id] = null;
+}
+
+function openModule(name) { __openOv('ov-' + name); }
+function closeOverlay(id) { __closeOv(id); }
+function openStory(opener) { __openOv('ov-story', opener); }
+
+function switchTab(el, prefix, name) {
+  const container = el.closest('.tabs').parentElement;
+  container.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected','false');
+  });
+  container.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  el.setAttribute('aria-selected','true');
+  const pane = document.getElementById(prefix + '-' + name);
+  if (pane) pane.classList.add('active');
+}
+function selectVersion(v, opener) {
+  document.querySelectorAll('.hist-item').forEach(i => {
+    i.classList.remove('active');
+    i.removeAttribute('aria-current');
+  });
+  if(opener){
+    opener.classList.add('active');
+    opener.setAttribute('aria-current','true');
+  }
+}
+function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard?.writeText(el.textContent).then(() => {
+    const btn = event.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// Sidebar toggle (mobile)
+(function(){
+  const tg = document.getElementById('sidebar-toggle');
+  const sb = document.getElementById('sidebar');
+  if (tg && sb) {
+    tg.addEventListener('click', () => {
+      const open = sb.classList.toggle('open');
+      tg.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  }
+})();
+
+// Keyboard close
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.overlay.open').forEach(o => __closeOv(o.id));
+  }
+});
+</script>
+</body>
+</html>
