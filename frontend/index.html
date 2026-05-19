@@ -1873,6 +1873,20 @@ function clearState(){
     document.getElementById('fs-'+s)?.classList.remove('done','run');
     const sc=document.getElementById('fsc-'+s); if(sc)sc.textContent='';
   });
+  // Reset preview content of all cards
+  const emptyTexts = {
+    1: 'Analise um requisito para ver ambiguidades, riscos e regras identificados pelo motor de raciocínio.',
+    2: 'Base de conhecimento corporativa. Padrões, bugs históricos, heurísticas e regras enriquecem a análise.',
+    3: 'Matriz de rastreabilidade gerada automaticamente. Vínculos entre requisitos, regras, cenários e evidências.',
+    4: 'Revisor automático de cobertura. Cenários faltando, redundâncias e inconsistências detectados.',
+    5: 'Gera artefatos prontos para uso: .robot, .feature, Xray JSON, Jira tickets, relatórios HTML.',
+  };
+  [1,2,3,4,5].forEach(n=>{
+    const p = document.getElementById('preview-m'+n);
+    if(p) p.innerHTML = '<div class="mc-empty">' + emptyTexts[n] + '</div>';
+  });
+  // Remove inference card if present
+  document.getElementById('inference-card')?.remove();
   toast('Estado limpo','var(--muted)');
 }
 
@@ -2537,6 +2551,12 @@ async function viewVersionHistory() {
 document.addEventListener('DOMContentLoaded', function() {
   loadStorage();
   updateTopbarReq();
+  // If no result saved, ensure cards show empty state
+  if (!state.lastResult) {
+    [1,2,3,4,5].forEach(n=>{
+      document.getElementById('card-m'+n)?.classList.remove('has-result');
+    });
+  }
 
   // Restore state if exists
   if (state.requirement) {
