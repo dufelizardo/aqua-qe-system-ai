@@ -674,7 +674,7 @@ ENGINE_LANGUAGE=portuguese</pre>
   <p class="lead">Key ideas you need to understand before working with the system.</p>
 
   <h2>Story ID Detection</h2>
-  <p>The system automatically detects story IDs in the format <code>ABC-1234</code> (e.g. <code>BSAG-1724</code>) from requirement text. When detected, all analysis results are versioned and linked to that story ID.</p>
+  <p>The system automatically detects story IDs in the format <code>ABC-1234</code> (e.g. <code>EDUIA-1724</code>) from requirement text. When detected, all analysis results are versioned and linked to that story ID.</p>
   <div class="callout info">
     <div class="callout-icon">💡</div>
     <div class="callout-body">Paste the full user story text including the story ID. The system extracts it automatically and links versions, defects, and KB entries to that story.</div>
@@ -686,7 +686,7 @@ ENGINE_LANGUAGE=portuguese</pre>
     <thead><tr><th>Notation</th><th>Meaning</th><th>Example</th></tr></thead>
     <tbody>
       <tr><td><code>RN-01</code></td><td>Business Rule (<em>Regra de Negócio</em>)</td><td>RN-01: The card must be displayed alphabetically</td></tr>
-      <tr><td><code>CA-01</code></td><td>Acceptance Criterion (<em>Critério de Aceite</em>)</td><td>CA-01: A card with title "ISIN Query" must exist</td></tr>
+      <tr><td><code>CA-01</code></td><td>Acceptance Criterion (<em>Critério de Aceite</em>)</td><td>CA-01: A card with title "TEXT Query" must exist</td></tr>
       <tr><td><code>RF-01</code></td><td>Functional Requirement</td><td>Inferred by the Inference Engine</td></tr>
       <tr><td><code>RNF-01</code></td><td>Non-Functional Requirement</td><td>Inferred by the Inference Engine</td></tr>
     </tbody>
@@ -808,11 +808,11 @@ ENGINE_LANGUAGE=portuguese</pre>
     <tbody>
       <tr><td>Business Pattern</td><td><code>padrao</code></td><td>Alphabetical ordering rule, session timeout behavior</td></tr>
       <tr><td>Historical Bug</td><td><code>bug</code></td><td>Auth bypass found in BUG-089, cache invalidation failure</td></tr>
-      <tr><td>Integration</td><td><code>integ</code></td><td>ISIN API behavior, Bloomberg timeout patterns</td></tr>
-      <tr><td>Glossary</td><td><code>gloss</code></td><td>ISIN = 12-char ISO 6166 code, WCAG 2.1 AA definition</td></tr>
+      <tr><td>Integration</td><td><code>integ</code></td><td>TEXT API behavior, Bloomberg timeout patterns</td></tr>
+      <tr><td>Glossary</td><td><code>gloss</code></td><td>TEXT = 12-char ISO 6166 code, WCAG 2.1 AA definition</td></tr>
       <tr><td>Compliance</td><td><code>comp</code></td><td>LGPD audit log requirements, ISO 6166 validation</td></tr>
       <tr><td>Risk</td><td><code>risco</code></td><td>Financial flows require audit trail, MFA for sensitive ops</td></tr>
-      <tr><td>QA Heuristic</td><td><code>heur</code></td><td>ISIN flows without audit generated regulatory failures in 8 analyses</td></tr>
+      <tr><td>QA Heuristic</td><td><code>heur</code></td><td>TEXT flows without audit generated regulatory failures in 8 analyses</td></tr>
     </tbody>
   </table>
 
@@ -873,19 +873,19 @@ ENGINE_LANGUAGE=portuguese</pre>
   <p>The Traceability Engine v2 uses the <strong>exact RN and CA texts</strong> extracted by the Requirement Parser — not AI-invented descriptions. Every test case references a real rule and a real criterion from your requirement.</p>
 
   <h3>Test Case Format</h3>
-  <pre>CT-001 - RN-01 | CA-01: Card "Consulta de ISIN" displayed on Manager Home
+  <pre>CT-001 - RN-01 | CA-01: Card "Consulta de TEXT" displayed on Manager Home
   RN-01: The functionality must be available via a card on the Manager Home
-  CA-01: A card with the title "Consulta de ISIN" must exist
+  CA-01: A card with the title "Consulta de TEXT" must exist
 
   Pre-conditions:
-  - Authenticated user with CONSULTA_ISIN_ACCESS permission
+  - Authenticated user with CONSULTA_TEXT_ACCESS permission
 
   Test data:
   - User: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="89e4e8e7e8eeecfbd6fcfaecfbc9eae6fbf9a7eae6e4">[email&#160;protected]</a> (valid permission)
 
   Steps:
   1. Navigate to Manager Home
-  2. Verify the "Consulta de ISIN" card is visible
+  2. Verify the "Consulta de TEXT" card is visible
   3. Verify alphabetical ordering among other cards
 
   Expected result: Card is displayed in alphabetical position per RN-02</pre>
@@ -1031,8 +1031,8 @@ RNF-003 [compliance] All blocked attempts must be written to the audit log (LGPD
   <h2>Gherkin example</h2>
   <pre>@critical @regression @security @RN-05 @CA-06 @RSK-003
 Scenario: CT-005 - Access denied via direct URL without permission
-  Given an authenticated user without CONSULTA_ISIN_ACCESS permission
-  When the user navigates directly to /consulta-isin
+  Given an authenticated user without CONSULTA_TEXT_ACCESS permission
+  When the user navigates directly to /consulta-TEXT
   Then the system blocks access with HTTP 403
   And records an audit event with user ID, IP, and timestamp (RN-28)
   And displays a standard access-denied message per platform pattern (CA-06)</pre>
@@ -1061,7 +1061,7 @@ Scenario: CT-005 - Access denied via direct URL without permission
     <div class="endpoint-desc">Run the full pipeline on a requirement. Returns complete analysis with all engine outputs.</div>
   </div>
   <pre>{
-  "requirement": "BSAG-1724 [Consulta de ISIN] ...",
+  "requirement": "EDUIA-1724 [Consulta de TEXT] ...",
   "context": "optional additional context",
   "project_id": "optional project ID",
   "engines": ["ambiguity","risk","rules","gap","coverage","inference"]
@@ -1190,7 +1190,7 @@ BASE_URL=https://your-corporate-endpoint/openai</pre>
   </div>
 
   <h2>Tuning for large requirements</h2>
-  <p>Requirements with 20+ RNs and 20+ CAs (like a full BSAG story) need more tokens for the Traceability Engine to generate complete coverage:</p>
+  <p>Requirements with 20+ RNs and 20+ CAs (like a full EDUIA story) need more tokens for the Traceability Engine to generate complete coverage:</p>
   <pre>ENGINE_MAX_TOKENS=8000   # minimum for large stories
 ENGINE_TIMEOUT=180       # increase if traceability times out</pre>
 </section>
@@ -1251,8 +1251,8 @@ py -3.12 seed_knowledge.py</pre>
   <pre>POST /api/v1/knowledge
 {
   "category": "risco",
-  "title": "ISIN flows require mandatory audit trail",
-  "description": "Any financial operation involving ISIN codes...",
+  "title": "TEXT flows require mandatory audit trail",
+  "description": "Any financial operation involving TEXT codes...",
   "project_id": "optional"
 }</pre>
   <p>Or edit <code>seed_knowledge.py</code> and re-run it to populate the initial KB.</p>
